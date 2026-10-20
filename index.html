@@ -1066,7 +1066,70 @@ main {
 
 /* contact */
 .contact { min-height: 72svh; }
-.clist { margin: 28px 0 0; }
+.clist { margin: 14px 0 0; }
+
+/* contact form: an inked panel like the case studies */
+.cform {
+  margin-top: 28px;
+  padding: 22px 22px 20px;
+  border: 2px solid var(--ink-line);
+  border-radius: 2px;
+  background: var(--panel-a);
+}
+@media (max-width: 480px) { .cform { padding: 18px 16px; } }
+.cf-title { margin: 0 0 16px; font: 400 1.2rem/1.3 var(--font-display); letter-spacing: 0.01em; }
+.cf-body { display: grid; gap: 16px; }
+.cf-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 640px) { .cf-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cf-field { display: grid; gap: 6px; min-width: 0; }
+.cf-field label { font: 700 0.875rem/1.3 var(--font-body); }
+.cf-field input,
+.cf-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 1rem/1.5 var(--font-body);
+}
+.cf-field textarea { min-height: 8.5rem; resize: vertical; }
+.cf-field input::placeholder,
+.cf-field textarea::placeholder { color: var(--faint); opacity: 1; }
+.cf-field input:focus,
+.cf-field textarea:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+.cf-field [aria-invalid="true"] { border-color: var(--accent); }
+.cf-err { margin: 0; color: var(--accent-ink); font-size: 0.875rem; }
+.cf-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.cf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.cf-actions .btn[disabled] { cursor: progress; opacity: 0.75; }
+.cf-note { margin: 0; max-width: 46ch; color: var(--muted); font-size: 0.875rem; }
+.cf-done { display: grid; gap: 12px; outline: none; }
+.cf-done-h { margin: 0; display: flex; align-items: center; gap: 10px; font: 400 1.15rem/1.3 var(--font-display); }
+.cf-done-h::before {
+  content: "";
+  width: 9px; height: 9px;
+  flex: none;
+  background: var(--gold);
+  transform: rotate(45deg);
+}
+.cf-done-h.is-warn::before { background: var(--accent); }
+.cf-done p { margin: 0; max-width: 60ch; }
+.cf-done .email-text { font-family: var(--font-mono); overflow-wrap: anywhere; }
+.cf-done-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.cf-text {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: 500 0.75rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
 .crow {
   display: grid;
   grid-template-columns: 6.5rem minmax(0, 1fr) auto;
@@ -1378,6 +1441,38 @@ body.exploring #sky:active { cursor: grabbing; }
     <p class="kicker"><span class="ep" aria-hidden="true">第9話</span><span class="jp" lang="ja" aria-hidden="true">連絡</span><span>Contact</span></p>
     <h2 class="title" id="contact-title">Get in touch</h2>
     <p class="intro">Happy to talk about roles, collaborations or any of these projects.</p>
+    <form class="cform" id="contactForm" novalidate aria-labelledby="cfTitle">
+      <h3 class="cf-title" id="cfTitle">Send me a message</h3>
+      <div class="cf-body" id="cfBody">
+        <div class="cf-row">
+          <div class="cf-field">
+            <label for="cfName">Your name</label>
+            <input id="cfName" name="name" type="text" autocomplete="name" maxlength="120" required aria-describedby="cfNameErr">
+            <p class="cf-err" id="cfNameErr" hidden></p>
+          </div>
+          <div class="cf-field">
+            <label for="cfEmail">Your email</label>
+            <input id="cfEmail" name="email" type="email" inputmode="email" autocomplete="email" maxlength="200" placeholder="name@company.com" required aria-describedby="cfEmailErr">
+            <p class="cf-err" id="cfEmailErr" hidden></p>
+          </div>
+        </div>
+        <div class="cf-field">
+          <label for="cfMsg">Message</label>
+          <textarea id="cfMsg" name="message" rows="5" maxlength="3000" placeholder="Tell me about the role or project." required aria-describedby="cfMsgErr"></textarea>
+          <p class="cf-err" id="cfMsgErr" hidden></p>
+        </div>
+        <div class="cf-hp" aria-hidden="true">
+          <label for="cfHoney">Leave this field empty</label>
+          <input id="cfHoney" name="_honey" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="cf-actions">
+          <button class="btn primary" type="submit" id="cfSend">Send message</button>
+          <p class="cf-note" id="cfNote">It goes straight to my inbox, and I reply from my own email.</p>
+        </div>
+      </div>
+      <div class="cf-done" id="cfDone" role="status" aria-live="polite" tabindex="-1" hidden></div>
+    </form>
+    <h3 class="subhead"><span class="jp" lang="ja" aria-hidden="true">直通</span>Or reach me directly</h3>
     <dl id="contactList" class="clist"></dl>
   </section>
 
@@ -1417,6 +1512,12 @@ body.exploring #sky:active { cursor: grabbing; }
     github: 'https://github.com/thabo11-hub',
     linkedin: 'https://www.linkedin.com/in/thabo-eldridge-sodi-5113741b5',
     credly: 'https://www.credly.com/users/thabo-eldridge-sodi',
+    /* contact form delivery through FormSubmit (formsubmit.co). Empty uses the email above;
+       after activating, paste the alias endpoint FormSubmit emails you to keep the address out of the code. */
+    formEndpoint: '',
+    /* where this site is hosted (for example https://your-site.vercel.app). The claude.ai copy of the page
+       cannot send email, so its form hands messages to this address. Empty: the claude.ai copy says to email instead. */
+    siteUrl: '',
     location: 'Johannesburg, South Africa · SAST (UTC+2)',
     updated: 'October 2026'
   };
@@ -2004,6 +2105,144 @@ body.exploring #sky:active { cursor: grabbing; }
     var tail = r[3] ? '<button class="copy" type="button" data-copy="' + esc(r[1]) + '">Copy</button>' : '<span></span>';
     return '<div class="crow"><dt>' + r[0] + '</dt><dd>' + r[2](r[1]) + '</dd>' + tail + '</div>';
   }).join('');
+
+  /* contact form. It sends through FormSubmit to CONFIG.email wherever the page is hosted normally.
+     The claude.ai viewer blocks requests to other sites, so a page there cannot send email:
+     with CONFIG.siteUrl set, Send hands the message to the hosted site (filled in, in a new tab)
+     instead, and the visitor presses Send there. */
+  (function contactForm() {
+    var form = $('#contactForm');
+    if (!form) return;
+    var inViewer = !!(window.claude && typeof window.claude.use === 'function');
+    var endpoint = CONFIG.formEndpoint || ('https://formsubmit.co/ajax/' + encodeURIComponent(CONFIG.email));
+    var site = String(CONFIG.siteUrl || '').replace(/\/+$/, '');
+    var fields = [
+      { input: $('#cfName'), err: $('#cfNameErr'), check: function (v) { return v ? '' : 'Enter your name.'; } },
+      { input: $('#cfEmail'), err: $('#cfEmailErr'), check: function (v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? '' : 'Enter an email address, like name@company.com.'; } },
+      { input: $('#cfMsg'), err: $('#cfMsgErr'), check: function (v) {
+        return v.length >= 10 ? '' : 'Add a few words about the role or project (at least 10 characters).'; } }
+    ];
+    var honey = $('#cfHoney'), send = $('#cfSend'), note = $('#cfNote'), body = $('#cfBody'), done = $('#cfDone');
+    var sendLabel = 'Send message';
+    if (inViewer) {
+      note.textContent = site
+        ? 'This preview can’t send email, so Send message opens my website in a new tab with your message filled in.'
+        : 'This preview can’t send email. The form sends from my website, or email me at ' + CONFIG.email + '.';
+    }
+
+    var show = function (f, msg) {
+      f.err.textContent = msg;
+      f.err.hidden = !msg;
+      if (msg) f.input.setAttribute('aria-invalid', 'true'); else f.input.removeAttribute('aria-invalid');
+    };
+    fields.forEach(function (f) {
+      f.input.addEventListener('input', function () { if (f.input.getAttribute('aria-invalid')) show(f, f.check(f.input.value.trim())); });
+    });
+    var values = function () { return { name: fields[0].input.value.trim(), email: fields[1].input.value.trim(), message: fields[2].input.value.trim() }; };
+    var finish = function (html) {
+      body.hidden = true;
+      done.innerHTML = html;
+      done.hidden = false;
+      done.focus({ preventScroll: true });
+    };
+    var restore = function () {
+      done.hidden = true;
+      done.innerHTML = '';
+      body.hidden = false;
+      send.disabled = false;
+      send.textContent = sendLabel;
+    };
+    /* a hand-off link from the claude.ai copy arrives as #send=<message>: fill the form in, never send it unasked */
+    (function prefill() {
+      if (location.hash.indexOf('#send=') !== 0) return;
+      try {
+        var d = JSON.parse(decodeURIComponent(location.hash.slice(6)));
+        fields[0].input.value = String(d.name || '').slice(0, 120);
+        fields[1].input.value = String(d.email || '').slice(0, 200);
+        fields[2].input.value = String(d.message || '').slice(0, 3000);
+        note.textContent = 'Your message is filled in. Check it, then press Send message.';
+        if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#contact');
+        setTimeout(function () {
+          form.scrollIntoView({ block: 'center' });
+          send.focus({ preventScroll: true });
+        }, 300);
+      } catch (err) {}
+    })();
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (send.disabled) return;
+      var v = values(), firstBad = null;
+      fields.forEach(function (f, q) {
+        var msg = f.check([v.name, v.email, v.message][q]);
+        show(f, msg);
+        if (msg && !firstBad) firstBad = f.input;
+      });
+      if (firstBad) { firstBad.focus(); return; }
+
+      if (inViewer) {
+        if (site) {
+          finish('<p class="cf-done-h">One more step</p>' +
+            '<p>This preview can’t send email itself. Your message opens on my website, filled in. Press Send message there to deliver it.</p>' +
+            '<div class="cf-done-actions">' +
+            '<a class="btn primary" href="' + esc(site + '/#send=' + encodeURIComponent(JSON.stringify(v))) + '" target="_blank" rel="noopener">Send from my website ↗</a>' +
+            '<button class="cf-text" type="button" data-cf="edit">Edit message</button></div>');
+        } else {
+          finish('<p class="cf-done-h is-warn">This preview can’t send messages</p>' +
+            '<p>Email me at <span class="email-text">' + esc(CONFIG.email) + '</span> instead.</p>' +
+            '<div class="cf-done-actions"><button class="cf-text" type="button" data-cf="edit">Back to the form</button></div>');
+        }
+        return;
+      }
+
+      if (honey.value) { finish('<p class="cf-done-h">Message sent</p>'); return; }
+      send.disabled = true;
+      send.textContent = 'Sending…';
+      var ctrl = 'AbortController' in window ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          name: v.name, email: v.email, message: v.message,
+          _replyto: v.email,
+          _subject: 'Portfolio message from ' + v.name,
+          _template: 'table', _captcha: 'false', _honey: ''
+        }),
+        signal: ctrl ? ctrl.signal : undefined
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          return res.ok && (data.success === true || data.success === 'true');
+        });
+      }).catch(function () { return false; }).then(function (ok) {
+        clearTimeout(timer);
+        if (ok) {
+          form.reset();
+          finish('<p class="cf-done-h">Message sent</p>' +
+            '<p>Thanks, ' + esc(v.name) + '. I’ll reply to <span class="email-text">' + esc(v.email) + '</span>.</p>' +
+            '<div class="cf-done-actions"><button class="cf-text" type="button" data-cf="again">Send another message</button></div>');
+        } else {
+          finish('<p class="cf-done-h is-warn">Your message didn’t send</p>' +
+            '<p>Your message is still here. Check your connection and try again. If it keeps failing, email me at <span class="email-text">' + esc(CONFIG.email) + '</span>.</p>' +
+            '<div class="cf-done-actions"><button class="btn primary" type="button" data-cf="retry">Try again</button>' +
+            '<button class="cf-text" type="button" data-cf="edit">Edit message</button></div>');
+        }
+      });
+    });
+
+    done.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-cf]');
+      if (!b) return;
+      var act = b.getAttribute('data-cf');
+      if (act === 'edit') { restore(); fields[2].input.focus(); }
+      else if (act === 'again') { restore(); fields[0].input.focus(); }
+      else if (act === 'retry') {
+        restore();
+        if (form.requestSubmit) form.requestSubmit(); else send.click();
+      }
+    });
+  })();
 
   /* ---------- reading state shared with the sky ---------- */
   var reading = { activeCase: null, activeFeatured: null, activeGroup: null, selectedTech: null, rowHover: null };
