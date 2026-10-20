@@ -38,7 +38,9 @@ Messages go through [FormSubmit](https://formsubmit.co) to the address in `CONFI
 2. FormSubmit emails you an activation link. Click it, or the form won't deliver messages.
 3. Optional: FormSubmit also sends a random string you can use instead of your address. Put `https://formsubmit.co/ajax/<that string>` in `CONFIG.formEndpoint`.
 
-If a message can't be sent, the form keeps the visitor's text and shows your address so they can email it instead. The claude.ai copy of the page can't send email, so there the form copies the message for the visitor to paste into an email.
+If sending fails, the form keeps the visitor's message and offers Try again.
+
+The claude.ai copy of the page can't send email, because the viewer blocks requests to other sites. Set `CONFIG.siteUrl` to your deployed address and its form opens your site in a new tab with the message filled in, ready to send.
 
 ## Editing content
 
@@ -46,7 +48,7 @@ All the content lives in the first `<script>` block of `index.html`:
 
 | Data | What it holds |
 | --- | --- |
-| `CONFIG` | Name, headline, email, links, location, contact form endpoint |
+| `CONFIG` | Name, headline, email, links, location, contact form endpoint, deployed site address |
 | `EXPERIENCE`, `CERTS`, `BADGES`, `EDUCATION` | The CV. Badge ids are Credly records (`credly.com/badges/<id>`) |
 | `PROJECTS` | Every project. `tier: 'case'` makes a case study and `tier: 'featured'` a highlight. `scope` (2 to 10) sets the star size and the LV tag |
 | `LIVE` | Hosted links shown under Live projects |

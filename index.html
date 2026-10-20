@@ -1118,18 +1118,6 @@ main {
 .cf-done p { margin: 0; max-width: 60ch; }
 .cf-done .email-text { font-family: var(--font-mono); overflow-wrap: anywhere; }
 .cf-done-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.cf-copybox {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 7.5rem;
-  padding: 10px 12px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 2px;
-  background: var(--bg);
-  color: var(--fg);
-  font: 400 0.875rem/1.55 var(--font-mono);
-  resize: vertical;
-}
 .cf-text {
   padding: 8px 0;
   border: 0;
@@ -1527,6 +1515,9 @@ body.exploring #sky:active { cursor: grabbing; }
     /* contact form delivery through FormSubmit (formsubmit.co). Empty uses the email above;
        after activating, paste the alias endpoint FormSubmit emails you to keep the address out of the code. */
     formEndpoint: '',
+    /* where this site is hosted (for example https://your-site.vercel.app). The claude.ai copy of the page
+       cannot send email, so its form hands messages to this address. Empty: the claude.ai copy says to email instead. */
+    siteUrl: '',
     location: 'Johannesburg, South Africa · SAST (UTC+2)',
     updated: 'October 2026'
   };
@@ -2115,14 +2106,16 @@ body.exploring #sky:active { cursor: grabbing; }
     return '<div class="crow"><dt>' + r[0] + '</dt><dd>' + r[2](r[1]) + '</dd>' + tail + '</div>';
   }).join('');
 
-  /* contact form. On a normal host it sends through FormSubmit to CONFIG.email.
-     Inside the claude.ai viewer a page cannot reach other sites, so there it copies
-     the message for the visitor to paste into an email instead of pretending to send. */
+  /* contact form. It sends through FormSubmit to CONFIG.email wherever the page is hosted normally.
+     The claude.ai viewer blocks requests to other sites, so a page there cannot send email:
+     with CONFIG.siteUrl set, Send hands the message to the hosted site (filled in, in a new tab)
+     instead, and the visitor presses Send there. */
   (function contactForm() {
     var form = $('#contactForm');
     if (!form) return;
     var inViewer = !!(window.claude && typeof window.claude.use === 'function');
     var endpoint = CONFIG.formEndpoint || ('https://formsubmit.co/ajax/' + encodeURIComponent(CONFIG.email));
+    var site = String(CONFIG.siteUrl || '').replace(/\/+$/, '');
     var fields = [
       { input: $('#cfName'), err: $('#cfNameErr'), check: function (v) { return v ? '' : 'Enter your name.'; } },
       { input: $('#cfEmail'), err: $('#cfEmailErr'), check: function (v) {
@@ -2131,9 +2124,12 @@ body.exploring #sky:active { cursor: grabbing; }
         return v.length >= 10 ? '' : 'Add a few words about the role or project (at least 10 characters).'; } }
     ];
     var honey = $('#cfHoney'), send = $('#cfSend'), note = $('#cfNote'), body = $('#cfBody'), done = $('#cfDone');
-    var sendLabel = inViewer ? 'Copy message' : 'Send message';
-    send.textContent = sendLabel;
-    if (inViewer) note.textContent = 'This page can’t send email, so the form copies your message for you to paste into an email to ' + CONFIG.email + '.';
+    var sendLabel = 'Send message';
+    if (inViewer) {
+      note.textContent = site
+        ? 'This preview can’t send email, so Send message opens my website in a new tab with your message filled in.'
+        : 'This preview can’t send email. The form sends from my website, or email me at ' + CONFIG.email + '.';
+    }
 
     var show = function (f, msg) {
       f.err.textContent = msg;
@@ -2144,16 +2140,6 @@ body.exploring #sky:active { cursor: grabbing; }
       f.input.addEventListener('input', function () { if (f.input.getAttribute('aria-invalid')) show(f, f.check(f.input.value.trim())); });
     });
     var values = function () { return { name: fields[0].input.value.trim(), email: fields[1].input.value.trim(), message: fields[2].input.value.trim() }; };
-    var compose = function (v) { return 'Hi Thabo,\n\n' + v.message + '\n\n' + v.name + '\n' + v.email; };
-    var mailto = function (v) {
-      return 'mailto:' + CONFIG.email + '?subject=' + encodeURIComponent('Portfolio message from ' + v.name) + '&body=' + encodeURIComponent(compose(v));
-    };
-    var copy = function (text, btn, box) {
-      var label = btn.textContent;
-      var flash = function (msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = label; }, 2000); };
-      var fallback = function () { if (box) { box.focus(); box.select(); } flash('Selected, copy it'); };
-      try { navigator.clipboard.writeText(text).then(function () { flash('Copied'); }, fallback); } catch (e) { fallback(); }
-    };
     var finish = function (html) {
       body.hidden = true;
       done.innerHTML = html;
@@ -2167,17 +2153,22 @@ body.exploring #sky:active { cursor: grabbing; }
       send.disabled = false;
       send.textContent = sendLabel;
     };
-    var fallbackHTML = function (v, title, warn, lead) {
-      return '<p class="cf-done-h' + (warn ? ' is-warn' : '') + '">' + esc(title) + '</p>' +
-        '<p>' + lead + ' <span class="email-text">' + esc(CONFIG.email) + '</span>.</p>' +
-        '<textarea class="cf-copybox" id="cfCopy" readonly aria-label="Your message">' + esc(compose(v)) + '</textarea>' +
-        '<div class="cf-done-actions">' +
-        '<button class="copy" type="button" data-cf="copy-msg">Copy message</button>' +
-        '<button class="copy" type="button" data-cf="copy-addr">Copy address</button>' +
-        '<a class="tlink" href="' + esc(mailto(v)) + '">Open email app</a>' +
-        '<button class="cf-text" type="button" data-cf="edit">Edit message</button>' +
-        '</div>';
-    };
+    /* a hand-off link from the claude.ai copy arrives as #send=<message>: fill the form in, never send it unasked */
+    (function prefill() {
+      if (location.hash.indexOf('#send=') !== 0) return;
+      try {
+        var d = JSON.parse(decodeURIComponent(location.hash.slice(6)));
+        fields[0].input.value = String(d.name || '').slice(0, 120);
+        fields[1].input.value = String(d.email || '').slice(0, 200);
+        fields[2].input.value = String(d.message || '').slice(0, 3000);
+        note.textContent = 'Your message is filled in. Check it, then press Send message.';
+        if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#contact');
+        setTimeout(function () {
+          form.scrollIntoView({ block: 'center' });
+          send.focus({ preventScroll: true });
+        }, 300);
+      } catch (err) {}
+    })();
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -2191,17 +2182,16 @@ body.exploring #sky:active { cursor: grabbing; }
       if (firstBad) { firstBad.focus(); return; }
 
       if (inViewer) {
-        var text = compose(v);
-        finish(fallbackHTML(v, 'Message copied', false, 'Paste it into an email to'));
-        var box = $('#cfCopy', done);
-        try {
-          navigator.clipboard.writeText(text).then(null, function () {
-            $('.cf-done-h', done).textContent = 'Your message is ready to copy';
-            box.focus(); box.select();
-          });
-        } catch (err) {
-          $('.cf-done-h', done).textContent = 'Your message is ready to copy';
-          box.focus(); box.select();
+        if (site) {
+          finish('<p class="cf-done-h">One more step</p>' +
+            '<p>This preview can’t send email itself. Your message opens on my website, filled in. Press Send message there to deliver it.</p>' +
+            '<div class="cf-done-actions">' +
+            '<a class="btn primary" href="' + esc(site + '/#send=' + encodeURIComponent(JSON.stringify(v))) + '" target="_blank" rel="noopener">Send from my website ↗</a>' +
+            '<button class="cf-text" type="button" data-cf="edit">Edit message</button></div>');
+        } else {
+          finish('<p class="cf-done-h is-warn">This preview can’t send messages</p>' +
+            '<p>Email me at <span class="email-text">' + esc(CONFIG.email) + '</span> instead.</p>' +
+            '<div class="cf-done-actions"><button class="cf-text" type="button" data-cf="edit">Back to the form</button></div>');
         }
         return;
       }
@@ -2233,7 +2223,10 @@ body.exploring #sky:active { cursor: grabbing; }
             '<p>Thanks, ' + esc(v.name) + '. I’ll reply to <span class="email-text">' + esc(v.email) + '</span>.</p>' +
             '<div class="cf-done-actions"><button class="cf-text" type="button" data-cf="again">Send another message</button></div>');
         } else {
-          finish(fallbackHTML(v, 'Your message didn’t send', true, 'Nothing was lost. Copy it below and email it to me at'));
+          finish('<p class="cf-done-h is-warn">Your message didn’t send</p>' +
+            '<p>Your message is still here. Check your connection and try again. If it keeps failing, email me at <span class="email-text">' + esc(CONFIG.email) + '</span>.</p>' +
+            '<div class="cf-done-actions"><button class="btn primary" type="button" data-cf="retry">Try again</button>' +
+            '<button class="cf-text" type="button" data-cf="edit">Edit message</button></div>');
         }
       });
     });
@@ -2242,10 +2235,12 @@ body.exploring #sky:active { cursor: grabbing; }
       var b = e.target.closest('[data-cf]');
       if (!b) return;
       var act = b.getAttribute('data-cf');
-      if (act === 'copy-msg') copy($('#cfCopy', done).value, b, $('#cfCopy', done));
-      else if (act === 'copy-addr') copy(CONFIG.email, b, null);
-      else if (act === 'edit') { restore(); fields[2].input.focus(); }
+      if (act === 'edit') { restore(); fields[2].input.focus(); }
       else if (act === 'again') { restore(); fields[0].input.focus(); }
+      else if (act === 'retry') {
+        restore();
+        if (form.requestSubmit) form.requestSubmit(); else send.click();
+      }
     });
   })();
 
