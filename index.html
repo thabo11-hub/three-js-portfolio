@@ -1483,10 +1483,10 @@ body.exploring #sky:active { cursor: grabbing; }
   </footer>
 </main>
 
-<div class="explore" id="explore" hidden>
+<div class="explore" id="explore" role="dialog" aria-modal="true" aria-labelledby="exTitle" hidden>
   <div class="ex-bar">
     <div class="ex-head">
-      <h2 class="ex-title">The sky</h2>
+      <h2 class="ex-title" id="exTitle">The sky</h2>
       <p class="ex-sub" id="exSub">29 projects · 49 technologies</p>
       <div class="ex-legend" id="exLegend"></div>
       <p class="ex-key"><span><i class="k-star"></i>project, sized by scope</span><span><i class="k-ring"></i>technology</span></p>
@@ -3333,6 +3333,17 @@ body.exploring #sky:active { cursor: grabbing; }
     document.addEventListener('keydown', function (e) {
       if (!exploring) return;
       if (e.key === 'Escape') { e.preventDefault(); exitExplore(); return; }
+      if (e.key === 'Tab') {
+        var tabs = Array.prototype.filter.call(exEl.querySelectorAll('button, a[href], [tabindex]'), function (el) {
+          return !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0;
+        });
+        if (!tabs.length) { e.preventDefault(); return; }
+        var first = tabs[0], last = tabs[tabs.length - 1], act = document.activeElement;
+        if (!exEl.contains(act)) { e.preventDefault(); first.focus({ preventScroll: true }); }
+        else if (e.shiftKey && act === first) { e.preventDefault(); last.focus({ preventScroll: true }); }
+        else if (!e.shiftKey && act === last) { e.preventDefault(); first.focus({ preventScroll: true }); }
+        return;
+      }
       if (e.target && e.target.closest && e.target.closest('.ex-sheet')) return;
       if (e.key === 'ArrowLeft') ctrl.tth += 0.25;
       else if (e.key === 'ArrowRight') ctrl.tth -= 0.25;
