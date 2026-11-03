@@ -444,6 +444,14 @@ main {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+.no-gl.gl .hero-name {
+  position: static;
+  width: auto; height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+}
 .eyebrow {
   margin: 0;
   font: 500 0.75rem/1.5 var(--font-mono);
@@ -2382,7 +2390,11 @@ body.exploring #sky:active { cursor: grabbing; }
 (function () {
   'use strict';
   var PF = window.PF;
-  if (!PF) return;
+  if (!PF) {
+    document.documentElement.classList.remove('gl');
+    document.documentElement.classList.add('no-gl');
+    return;
+  }
   try {
     PF.sky = initSky();
     document.documentElement.classList.add('gl');
