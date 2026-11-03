@@ -435,6 +435,14 @@ main {
   }
 }
 .no-gl .hero-fx { display: none; }
+.no-gl .hero-name {
+  position: static;
+  width: auto; height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+}
 .gl .hero-name {
   position: absolute;
   width: 1px; height: 1px;
@@ -3534,6 +3542,9 @@ body.exploring #sky:active { cursor: grabbing; }
       if (exploring) exitExplore();
       document.documentElement.classList.remove('gl');
       document.documentElement.classList.add('no-gl');
+      var lab = document.getElementById('labels');
+      if (lab) lab.textContent = '';
+      veilEl.style.opacity = '0'; lastVeil = '0.000';
     });
 
     measure();
