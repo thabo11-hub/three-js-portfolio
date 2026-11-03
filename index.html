@@ -2216,22 +2216,32 @@ body.exploring #sky:active { cursor: grabbing; }
       send.disabled = true;
       send.textContent = 'Sending…';
       var ctrl = 'AbortController' in window ? new AbortController() : null;
-      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          name: v.name, email: v.email, message: v.message,
-          _replyto: v.email,
-          _subject: 'Portfolio message from ' + v.name,
-          _template: 'table', _captcha: 'false', _honey: ''
-        }),
-        signal: ctrl ? ctrl.signal : undefined
+      var timer;
+      /* one timer covers headers and body; it also rejects, so a hung body read can't leave the button disabled */
+      var timeout = new Promise(function (resolve, reject) {
+        timer = setTimeout(function () {
+          if (ctrl) { try { ctrl.abort(); } catch (err) {} }
+          reject(new Error('timeout'));
+        }, 15000);
+      });
+      var request = Promise.resolve().then(function () {
+        return fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            name: v.name, email: v.email, message: v.message,
+            _replyto: v.email,
+            _subject: 'Portfolio message from ' + v.name,
+            _template: 'table', _captcha: 'false', _honey: ''
+          }),
+          signal: ctrl ? ctrl.signal : undefined
+        });
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (data) {
-          return res.ok && (data.success === true || data.success === 'true');
+          return !!data && res.ok && (data.success === true || data.success === 'true');
         });
-      }).catch(function () { return false; }).then(function (ok) {
+      });
+      Promise.race([request, timeout]).catch(function () { return false; }).then(function (ok) {
         clearTimeout(timer);
         if (ok) {
           form.reset();
