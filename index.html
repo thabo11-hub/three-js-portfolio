@@ -2297,15 +2297,34 @@ body.exploring #sky:active { cursor: grabbing; }
   selectTech('React');
 
   function copyText(text, btn) {
-    var done = function (msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); };
+    var live = $('#copyStatus');
+    if (!live) {
+      live = document.createElement('div');
+      live.id = 'copyStatus';
+      live.setAttribute('role', 'status');
+      live.setAttribute('aria-live', 'polite');
+      live.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+      document.body.appendChild(live);
+    }
+    var done = function (msg, say) {
+      btn.textContent = msg;
+      /* clear first so repeating the same message is announced again */
+      live.textContent = '';
+      setTimeout(function () { live.textContent = say || msg; }, 50);
+      clearTimeout(btn._copyTimer);
+      btn._copyTimer = setTimeout(function () { btn.textContent = 'Copy'; }, msg === 'Copied' ? 1800 : 3500);
+    };
     var fallback = function () {
       var el = btn.parentNode.querySelector('.email-text');
       if (el && window.getSelection) {
         var range = document.createRange(); range.selectNodeContents(el);
         var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        done('Selected, now copy', 'Email address selected. Use your copy shortcut to copy it.');
+      } else {
+        done('Copy failed', 'Could not copy automatically.');
       }
-      done('Selected');
     };
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') { fallback(); return; }
     try {
       navigator.clipboard.writeText(text).then(function () { done('Copied'); }, fallback);
     } catch (e) { fallback(); }
