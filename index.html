@@ -3434,9 +3434,15 @@ body.exploring #sky:active { cursor: grabbing; }
     }
 
     /* ---------- resize ---------- */
-    var lastW = W, lastH = H, resizeTimer = 0;
+    var lastW = W, lastH = H, resizeTimer = 0, prCap = 1.75;
     function onResize() {
       W = window.innerWidth; H = window.innerHeight;
+      var wantPR = Math.min(window.devicePixelRatio || 1, prCap);
+      if (wantPR !== PR) {
+        PR = wantPR;
+        renderer.setPixelRatio(PR);
+        [dustMat, starMat, techMat].forEach(function (m) { m.uniforms.uPR.value = PR; });
+      }
       renderer.setSize(W, H, false);
       camera.aspect = W / H;
       camera.updateProjectionMatrix();
@@ -3469,6 +3475,7 @@ body.exploring #sky:active { cursor: grabbing; }
     var perf = { frames: 0, sum: 0, done: false };
     function setPR(v) {
       PR = v;
+      prCap = Math.min(prCap, v);
       renderer.setPixelRatio(v);
       renderer.setSize(W, H, false);
       [dustMat, starMat, techMat].forEach(function (m) { m.uniforms.uPR.value = v; });
