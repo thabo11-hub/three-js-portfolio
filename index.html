@@ -3374,7 +3374,7 @@ body.exploring #sky:active { cursor: grabbing; }
         else if (!e.shiftKey && act === last) { e.preventDefault(); first.focus({ preventScroll: true }); }
         return;
       }
-      if (e.target && e.target.closest && e.target.closest('.ex-sheet')) return;
+      if (e.target && e.target.closest && e.target.closest('.ex-sheet, button, a, input, select, textarea')) return;
       if (e.key === 'ArrowLeft') ctrl.tth += 0.25;
       else if (e.key === 'ArrowRight') ctrl.tth -= 0.25;
       else if (e.key === 'ArrowUp') ctrl.tph = clamp(ctrl.tph - 0.2, 0.3, 2.85);
