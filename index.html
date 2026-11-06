@@ -3132,6 +3132,16 @@ body.exploring #sky:active { cursor: grabbing; }
     }
     var placed = [];
     var exHead = document.querySelector('.ex-head');
+    /* cached layout boxes: refreshed on resize, sheet open/close and ResizeObserver, never per frame */
+    var exHeadBottom = 20, exSheetBox = null;
+    function refreshExBoxes() {
+      if (!exploring) return;
+      exHeadBottom = exHead.getBoundingClientRect().bottom + 6;
+      if (sheetOpen) {
+        var sb = sheet.getBoundingClientRect();
+        exSheetBox = { x: sb.left - 6, y: sb.top - 6, w: sb.width + 12, h: sb.height + 12 };
+      } else exSheetBox = null;
+    }
     function hits(b, o) { return b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y; }
     function overlapsPlaced(b) { for (var q = 0; q < placed.length; q++) if (hits(b, placed[q])) return true; return false; }
     function placeLabels() {
@@ -3140,11 +3150,8 @@ body.exploring #sky:active { cursor: grabbing; }
       var leftLimit = (!exploring && W >= 900) ? colRight + 12 : -1e9;
       var topLimit = 20, sheetBox = null;
       if (exploring) {
-        topLimit = exHead.getBoundingClientRect().bottom + 6;
-        if (sheetOpen) {
-          var sb = sheet.getBoundingClientRect();
-          sheetBox = { x: sb.left - 6, y: sb.top - 6, w: sb.width + 12, h: sb.height + 12 };
-        }
+        topLimit = exHeadBottom;
+        if (sheetOpen) sheetBox = exSheetBox;
       }
       var list = [];
       want.forEach(function (L) { list.push(L); });
@@ -3271,9 +3278,10 @@ body.exploring #sky:active { cursor: grabbing; }
       $$('.lg', legend).forEach(function (b) {
         b.setAttribute('aria-pressed', f && f.type === 'disc' && f.id === b.getAttribute('data-sel-disc') ? 'true' : 'false');
       });
-      if (!f) { sheet.hidden = true; sheet.innerHTML = ''; sheetOpen = false; hint.hidden = false; return; }
+      if (!f) { sheet.hidden = true; sheet.innerHTML = ''; sheetOpen = false; hint.hidden = false; refreshExBoxes(); return; }
       sheet.innerHTML = f.type === 'project' ? sheetProject(projById.get(f.id)) : f.type === 'tech' ? sheetTech(f.id) : sheetDisc(f.id);
       sheet.hidden = false; sheet.scrollTop = 0; sheetOpen = true; hint.hidden = true;
+      refreshExBoxes();
     }
     function select(f, aim) {
       setFocus(f);
@@ -3292,6 +3300,7 @@ body.exploring #sky:active { cursor: grabbing; }
       mainEl.inert = true; topbarEl.inert = true;
       exEl.hidden = false;
       select(f || null, !!f);
+      refreshExBoxes(); /* explore UI is now visible: measure header/sheet once */
       var close = document.getElementById('exClose');
       if (close) close.focus({ preventScroll: true });
     }
@@ -3447,6 +3456,7 @@ body.exploring #sky:active { cursor: grabbing; }
       camera.aspect = W / H;
       camera.updateProjectionMatrix();
       measure();
+      refreshExBoxes();
       var modeNow = (W < 640 ? PF.CONFIG.particle.narrow : PF.CONFIG.particle.wide).join('|') + (W < 640 ? ':n' : ':w');
       if (textPts && modeNow !== textMode) sampleText();
       if (Math.abs(W - lastW) > 2 || Math.abs(H - lastH) > 140 || modeNow !== textMode) { layoutText(); lastW = W; lastH = H; }
@@ -3458,6 +3468,8 @@ body.exploring #sky:active { cursor: grabbing; }
         clearTimeout(roTimer);
         roTimer = setTimeout(function () { measure(); layoutText(); }, 120);
       }).observe(mainEl);
+      var exRO = new ResizeObserver(refreshExBoxes);
+      exRO.observe(exHead); exRO.observe(sheet);
     }
 
     /* theme changes from the toggle, the host or the OS */
