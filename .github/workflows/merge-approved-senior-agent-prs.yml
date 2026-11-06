@@ -1,0 +1,55 @@
+# Merges a senior-agent pull request as soon as you approve it.
+#
+# Copy this file to .github/workflows/ in each repository the agent works on. Only pull
+# requests from this repository's own senior-agent/* branches are touched, and only when the
+# approval comes from the owner, a member or a collaborator and covers the latest commit.
+# Without this file the agent still merges approved pull requests, on its next run.
+name: Merge approved senior-agent pull requests
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: senior-agent-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >-
+      github.event.review.state == 'approved' &&
+      startsWith(github.event.pull_request.head.ref, 'senior-agent/') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      REVIEWED_SHA: ${{ github.event.review.commit_id }}
+      # rebase keeps the agent's commit and its date as they are; squash and merge also work.
+      MERGE_METHOD: rebase
+    steps:
+      - name: Merge the approved pull request
+        run: |
+          if [ "$REVIEWED_SHA" != "$HEAD_SHA" ]; then
+            echo "This approval is for an older commit than the pull request's latest one, so it is not merged."
+            exit 0
+          fi
+          if [ "$(gh pr view "$PR" --json isDraft --jq .isDraft)" = "true" ]; then
+            gh pr ready "$PR"
+          fi
+          if gh pr merge "$PR" --repo "$GH_REPO" "--$MERGE_METHOD" --delete-branch \
+              --match-head-commit "$HEAD_SHA"; then
+            echo "Merged #$PR after your approval." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh pr comment "$PR" --body "Approved, but GitHub could not merge it just now ([details]($run_url)). The senior agent tries again on its next run, and rebuilds it on top of the base branch if it conflicts."
+          exit 1
