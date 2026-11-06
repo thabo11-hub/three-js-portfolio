@@ -2407,8 +2407,23 @@ body.exploring #sky:active { cursor: grabbing; }
     root.setAttribute('data-theme', next);
     try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
     syncThemeBtn();
+    syncThemeColor();
   });
+  /* a manual choice overrides both media-scoped theme-color metas */
+  var tcMetas = document.querySelectorAll('meta[name="theme-color"]'), tcColor = {};
+  for (var ti = 0; ti < tcMetas.length; ti++) {
+    /* remember the colours authored in the media-scoped metas so they stay the single source */
+    var tcMedia = tcMetas[ti].getAttribute('media') || '';
+    var tcKey = tcMedia.indexOf('dark') > -1 ? 'dark' : tcMedia.indexOf('light') > -1 ? 'light' : '';
+    if (tcKey && !tcColor[tcKey]) tcColor[tcKey] = tcMetas[ti].getAttribute('content');
+  }
+  function syncThemeColor() {
+    var t = root.getAttribute('data-theme');
+    if ((t !== 'dark' && t !== 'light') || !tcColor[t]) return;
+    for (var i = 0; i < tcMetas.length; i++) tcMetas[i].setAttribute('content', tcColor[t]);
+  }
   syncThemeBtn();
+  syncThemeColor();
 
   /* reading progress fills the XP bar under the top bar */
   var topbar = $('#topbar'), xpQueued = false;
