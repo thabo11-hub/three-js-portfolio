@@ -2190,16 +2190,20 @@ body.exploring #sky:active { cursor: grabbing; }
       if (location.hash.indexOf('#send=') !== 0) return;
       try {
         var d = JSON.parse(decodeURIComponent(location.hash.slice(6)));
-        fields[0].input.value = String(d.name || '').slice(0, 120);
-        fields[1].input.value = String(d.email || '').slice(0, 200);
-        fields[2].input.value = String(d.message || '').slice(0, 3000);
+        if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('bad payload');
+        var txt = function (x, n) { return (typeof x === 'string' ? x : '').slice(0, n); };
+        fields[0].input.value = txt(d.name, 120);
+        fields[1].input.value = txt(d.email, 200);
+        fields[2].input.value = txt(d.message, 3000);
         note.textContent = 'Your message is filled in. Check it, then press Send message.';
         if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#contact');
         setTimeout(function () {
           form.scrollIntoView({ block: 'center' });
           send.focus({ preventScroll: true });
         }, 300);
-      } catch (err) {}
+      } catch (err) {
+        try { if (history.replaceState) history.replaceState(null, '', location.pathname + location.search); } catch (e2) {}
+      }
     })();
 
     form.addEventListener('submit', function (e) {
