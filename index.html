@@ -3315,6 +3315,10 @@ body.exploring #sky:active { cursor: grabbing; }
     function select(f, aim) {
       setFocus(f);
       renderSheet(f);
+      if (exploring && !exEl.hidden && !exEl.contains(document.activeElement)) {
+        var xc = document.getElementById('exClose');
+        if (xc) xc.focus({ preventScroll: true });
+      }
       if (aim && f) aimAt(f);
     }
     function enterExplore(f, trigger) {
