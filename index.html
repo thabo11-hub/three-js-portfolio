@@ -3005,8 +3005,9 @@ body.exploring #sky:active { cursor: grabbing; }
       textPts = out;
     }
     function layoutText() {
-      if (!textPts) return;
+      if (!textPts || !W || !H) return;
       var heroInner = $('.hero-inner'), tb = document.getElementById('topbar');
+      if (!heroInner || !tb) return;
       var padTop = parseFloat(getComputedStyle(document.documentElement).paddingTop) || 0;
       var top = padTop + tb.offsetHeight + 10;
       var hr = heroInner.getBoundingClientRect();
@@ -3083,12 +3084,15 @@ body.exploring #sky:active { cursor: grabbing; }
     var SEC = [['top', 'hero'], ['profile', 'profile'], ['experience', 'experience'], ['cases', 'cases'], ['live', 'live'], ['work', 'work'], ['more', 'more'], ['stack', 'stack'], ['github', 'github'], ['contact', 'contact']];
     var secs = [], colRight = 0, portraitMult = 1, curSection = 'hero';
     function measure() {
-      secs = SEC.map(function (s) {
-        var el = document.getElementById(s[0]);
-        var r = el.getBoundingClientRect();
+      if (!W || !H) return;
+      var found = SEC.filter(function (s) { return document.getElementById(s[0]); });
+      if (!found.length) return;
+      secs = found.map(function (s) {
+        var r = document.getElementById(s[0]).getBoundingClientRect();
         return { st: s[1], top: r.top + window.scrollY, h: r.height };
       });
-      colRight = document.getElementById('profile').getBoundingClientRect().right;
+      var profEl = document.getElementById('profile');
+      if (profEl) colRight = profEl.getBoundingClientRect().right;
       var aspect = W / H;
       portraitMult = aspect < 0.9 ? Math.min(1.45, 1 + (0.9 - aspect) * 0.95) : 1;
     }
@@ -3479,7 +3483,9 @@ body.exploring #sky:active { cursor: grabbing; }
     /* ---------- resize ---------- */
     var lastW = W, lastH = H, resizeTimer = 0, prCap = 1.75;
     function onResize() {
-      W = window.innerWidth; H = window.innerHeight;
+      var nW = window.innerWidth, nH = window.innerHeight;
+      if (!nW || !nH) return;
+      W = nW; H = nH;
       var wantPR = Math.min(window.devicePixelRatio || 1, prCap);
       if (wantPR !== PR) {
         PR = wantPR;
