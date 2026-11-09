@@ -3446,7 +3446,8 @@ body.exploring #sky:active { cursor: grabbing; }
         });
         if (!tabs.length) { e.preventDefault(); return; }
         var first = tabs[0], last = tabs[tabs.length - 1], act = document.activeElement;
-        if (!exEl.contains(act)) { e.preventDefault(); first.focus({ preventScroll: true }); }
+        if (tabs.length === 1) { e.preventDefault(); first.focus({ preventScroll: true }); }
+        else if (!exEl.contains(act) || tabs.indexOf(act) < 0) { e.preventDefault(); first.focus({ preventScroll: true }); }
         else if (e.shiftKey && act === first) { e.preventDefault(); last.focus({ preventScroll: true }); }
         else if (!e.shiftKey && act === last) { e.preventDefault(); first.focus({ preventScroll: true }); }
         return;
