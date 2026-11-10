@@ -2400,6 +2400,8 @@ body.exploring #sky:active { cursor: grabbing; }
   $$('.case, .project, #moreList .row, #liveList .live[data-id]').forEach(function (r) {
     r.addEventListener('mouseenter', function () { reading.rowHover = { type: 'project', id: r.getAttribute('data-id') }; });
     r.addEventListener('mouseleave', function () { reading.rowHover = null; });
+    r.addEventListener('focusin', function () { reading.rowHover = { type: 'project', id: r.getAttribute('data-id') }; });
+    r.addEventListener('focusout', function (e) { if (!e.relatedTarget || !r.contains(e.relatedTarget)) reading.rowHover = null; });
   });
 
   /* theme */
