@@ -3348,7 +3348,12 @@ body.exploring #sky:active { cursor: grabbing; }
       document.body.classList.remove('exploring');
       mainEl.inert = false; topbarEl.inert = false;
       exEl.hidden = true;
-      hover = null; pointers.clear();
+      hover = null;
+      pointers.forEach(function (_, id) {
+        try { if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id); } catch (err) {}
+      });
+      pointers.clear();
+      moved = 0; wasPinch = false; pinchD = 0;
       canvas.style.cursor = '';
       renderSheet(null);
       setFocus(null);
@@ -3436,6 +3441,9 @@ body.exploring #sky:active { cursor: grabbing; }
     }
     canvas.addEventListener('pointerup', pointerEnd);
     canvas.addEventListener('pointercancel', pointerEnd);
+    /* fires after pointerup/cancel too; pointerEnd ignores ids no longer in `pointers`, and only
+       type 'pointerup' can select, so the repeat call is a no-op */
+    canvas.addEventListener('lostpointercapture', pointerEnd);
     canvas.addEventListener('wheel', function (e) {
       if (!exploring) return;
       e.preventDefault();
