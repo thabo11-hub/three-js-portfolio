@@ -2434,6 +2434,14 @@ body.exploring #sky:active { cursor: grabbing; }
   }
   syncThemeBtn();
   syncThemeColor();
+  /* keep the label correct when the OS scheme changes and no explicit theme is set */
+  try {
+    var schemeMq = window.matchMedia && matchMedia('(prefers-color-scheme: light)');
+    if (schemeMq) {
+      if (schemeMq.addEventListener) schemeMq.addEventListener('change', syncThemeBtn);
+      else if (schemeMq.addListener) schemeMq.addListener(syncThemeBtn);
+    }
+  } catch (e) {}
 
   /* reading progress fills the XP bar under the top bar */
   var topbar = $('#topbar'), xpQueued = false;
