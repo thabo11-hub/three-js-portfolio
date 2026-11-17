@@ -2208,7 +2208,7 @@ body.exploring #sky:active { cursor: grabbing; }
         note.textContent = 'Your message is filled in. Check it, then press Send message.';
         if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#contact');
         setTimeout(function () {
-          form.scrollIntoView({ block: 'center' });
+          form.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
           send.focus({ preventScroll: true });
         }, 300);
       } catch (err) {
