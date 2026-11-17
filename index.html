@@ -1525,7 +1525,7 @@ body.exploring #sky:active { cursor: grabbing; }
   </footer>
 </main>
 
-<div class="explore" id="explore" role="dialog" aria-modal="true" aria-labelledby="exTitle" hidden>
+<div class="explore" id="explore" role="dialog" aria-modal="true" aria-labelledby="exTitle" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -" hidden>
   <div class="ex-bar">
     <div class="ex-head">
       <h2 class="ex-title" id="exTitle">The sky</h2>
@@ -3243,6 +3243,9 @@ body.exploring #sky:active { cursor: grabbing; }
     /* ---------- explore mode ---------- */
     var exploring = false, sheetOpen = false, lastTrigger = null;
     var exEl = document.getElementById('explore'), sheet = document.getElementById('exSheet'), hint = document.getElementById('exHint');
+    if (window.matchMedia && matchMedia('(pointer: fine)').matches) {
+      hint.textContent = 'Drag or use arrow keys to turn · scroll or +/- to zoom · tap a star';
+    }
     var legend = document.getElementById('exLegend');
     var mainEl = document.getElementById('main'), topbarEl = document.getElementById('topbar');
     legend.innerHTML = DISCIPLINES.map(function (d) {
