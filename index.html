@@ -2369,7 +2369,11 @@ body.exploring #sky:active { cursor: grabbing; }
       if (list) list.classList.remove('clamp');
       var reveal = list ? list.querySelectorAll('.bdg')[4] : null;
       b.remove();
-      if (reveal) reveal.focus({ preventScroll: true });
+      var land = reveal || list;
+      if (land) {
+        if (!land.hasAttribute('tabindex') && land.tagName !== 'A' && land.tagName !== 'BUTTON') land.setAttribute('tabindex', '-1');
+        land.focus({ preventScroll: true });
+      }
       return;
     }
     var sky = window.PF && window.PF.sky;
@@ -3344,7 +3348,11 @@ body.exploring #sky:active { cursor: grabbing; }
       ctrl.tr = fitR(); ctrl.tth = ctrl.th; ctrl.tph = clamp(ctrl.ph, 0.7, 2.4);
       document.documentElement.classList.add('lock');
       document.body.classList.add('exploring');
+      /* inert removes the background from focus and the a11y tree; aria-hidden is a belt-and-braces fallback for older browsers */
       mainEl.inert = true; topbarEl.inert = true;
+      mainEl.setAttribute('aria-hidden', 'true'); topbarEl.setAttribute('aria-hidden', 'true');
+      var skipEl = document.querySelector('.skip-link');
+      if (skipEl) skipEl.inert = true;
       exEl.hidden = false;
       select(f || null, !!f);
       refreshExBoxes(); /* explore UI is now visible: measure header/sheet once */
@@ -3357,6 +3365,9 @@ body.exploring #sky:active { cursor: grabbing; }
       document.documentElement.classList.remove('lock');
       document.body.classList.remove('exploring');
       mainEl.inert = false; topbarEl.inert = false;
+      mainEl.removeAttribute('aria-hidden'); topbarEl.removeAttribute('aria-hidden');
+      var skipBack = document.querySelector('.skip-link');
+      if (skipBack) skipBack.inert = false;
       exEl.hidden = true;
       hover = null;
       pointers.forEach(function (_, id) {
@@ -3368,6 +3379,8 @@ body.exploring #sky:active { cursor: grabbing; }
       renderSheet(null);
       setFocus(null);
       if (lastTrigger && document.contains(lastTrigger) && lastTrigger.focus) lastTrigger.focus({ preventScroll: true });
+      else if (mainEl && mainEl.focus) mainEl.focus({ preventScroll: true });
+      lastTrigger = null;
     }
     exEl.addEventListener('click', function (e) {
       var b = e.target.closest('button');
@@ -3464,7 +3477,9 @@ body.exploring #sky:active { cursor: grabbing; }
       if (e.key === 'Escape') { e.preventDefault(); exitExplore(); return; }
       if (e.key === 'Tab') {
         var tabs = Array.prototype.filter.call(exEl.querySelectorAll('button, a[href], [tabindex]'), function (el) {
-          return !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0;
+          return !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0 &&
+            !el.closest('[inert],[hidden],[aria-hidden="true"]') &&
+            getComputedStyle(el).visibility !== 'hidden';
         });
         if (!tabs.length) { e.preventDefault(); return; }
         var first = tabs[0], last = tabs[tabs.length - 1], act = document.activeElement;
