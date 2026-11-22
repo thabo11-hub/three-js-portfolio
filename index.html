@@ -14,6 +14,14 @@
       var saved = localStorage.getItem('tes-portfolio-theme');
       if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
     } catch (e) {}
+    /* anime.js plays the hero's entrance; its lines wait unseen until then, never for long */
+    try {
+      if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        var de = document.documentElement;
+        de.classList.add('anim-wait');
+        setTimeout(function () { de.classList.remove('anim-wait'); }, 2500);
+      }
+    } catch (e) {}
   })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,6 +63,7 @@
   --moon-halo: rgba(217, 30, 58, 0.3);
   --speed: rgba(241, 234, 224, 0.075);
   --moon-blend: screen;
+  --shine: rgba(240, 194, 84, 0.95);
   --font-display: "Dela Gothic One", "Arial Black", "Hiragino Kaku Gothic StdN", "Yu Gothic", sans-serif;
   --font-body: "Zen Kaku Gothic New", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -94,6 +103,7 @@
     --moon-halo: rgba(200, 16, 46, 0);
     --speed: rgba(23, 20, 26, 0.11);
     --moon-blend: multiply;
+    --shine: rgba(255, 255, 255, 0.6);
     color-scheme: light;
   }
 }
@@ -128,6 +138,7 @@
   --moon-halo: rgba(200, 16, 46, 0);
   --speed: rgba(23, 20, 26, 0.11);
   --moon-blend: multiply;
+  --shine: rgba(255, 255, 255, 0.6);
   color-scheme: light;
 }
 
@@ -419,14 +430,37 @@ main {
     linear-gradient(var(--hc), var(--hc)) right bottom / 18px 1px no-repeat,
     linear-gradient(var(--hc), var(--hc)) right bottom / 1px 18px no-repeat;
 }
-.ghost {
+/* the name as a solid title card above the particles: a dark keyline that also fills the letters'
+   counters, a crimson drop, the ink and a passing glint. The masks are drawn from the same canvas
+   text as the particle formation, so the card and the aura of dots line up exactly. */
+.name-card {
   display: none;
-  position: absolute;
-  background: var(--fg);
-  opacity: 0.1;
-  -webkit-mask: center / 100% 100% no-repeat;
-  mask: center / 100% 100% no-repeat;
+  position: absolute; left: 0; top: 0;
+  z-index: 1;
+  pointer-events: none;
+  --nc-d: 6px;
 }
+.name-card.on { display: block; }
+.no-gl .name-card { display: none; }
+.nc-layer {
+  position: absolute; inset: 0;
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+}
+.nc-drop { background: var(--accent); transform: translate(var(--nc-d), var(--nc-d)); }
+.nc-edge { background: var(--bg); }
+.nc-ink { background: var(--fg); }
+.nc-shine { background: linear-gradient(100deg, transparent 42%, var(--shine) 50%, transparent 58%) 160% 0 / 250% 100% no-repeat; }
+.nc-slash {
+  position: absolute; left: 0; top: -16%; bottom: -16%;
+  width: 4px;
+  background: var(--gold);
+  box-shadow: 0 0 calc(var(--glow) * 18px) var(--accent);
+  opacity: 0;
+  transform: skewX(-18deg);
+}
+.anim-wait .hero-inner > :not(.hero-name) { opacity: 0; }
 /* the name in katakana, set vertically like a title card */
 .kana {
   position: absolute;
@@ -1337,8 +1371,14 @@ body.exploring #sky:active { cursor: grabbing; }
   <div class="speed"></div>
   <div class="moon"></div>
   <div class="hud"></div>
-  <div class="ghost" id="nameGhost"></div>
   <p class="kana" lang="ja">エルドリッジ</p>
+</div>
+<div class="name-card" id="nameCard" aria-hidden="true">
+  <i class="nc-layer nc-drop"></i>
+  <i class="nc-layer nc-edge"></i>
+  <i class="nc-layer nc-ink"></i>
+  <i class="nc-layer nc-shine"></i>
+  <i class="nc-slash"></i>
 </div>
 <div id="labels" aria-hidden="true"></div>
 
@@ -1378,7 +1418,7 @@ body.exploring #sky:active { cursor: grabbing; }
       <h1 id="hero-name" class="hero-name">Thabo Eldridge Sodi</h1>
       <p class="kana-inline" lang="ja" aria-hidden="true">エルドリッジ</p>
       <p class="eyebrow" id="heroEyebrow">Thabo Eldridge Sodi · Platform Engineer at Absa Group</p>
-      <p class="lede">I build web, mobile and cloud software end to end, from React interfaces to Terraform-managed AWS and AI agents grounded in real data.</p>
+      <p class="lede">I build web and cloud software end to end, from React interfaces and phone-first web apps to Terraform-managed AWS and AI agents grounded in real data.</p>
       <div class="hero-actions">
         <button class="btn primary" type="button" data-explore data-needs-gl aria-keyshortcuts="E">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-20 12 12)"/><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/><circle cx="21.2" cy="8.7" r="1.3" fill="currentColor" stroke="none"/></svg>
@@ -1389,7 +1429,7 @@ body.exploring #sky:active { cursor: grabbing; }
         <a class="btn" href="#live">Live projects</a>
       </div>
       <div class="hero-links" id="heroLinks"></div>
-      <p class="hero-meta" id="heroMeta">Johannesburg, South Africa · 4+ years in industry · HashiCorp Terraform Associate · Updated October 2026</p>
+      <p class="hero-meta" id="heroMeta">Johannesburg, South Africa · 4+ years in industry · HashiCorp Terraform Associate · Updated November 2026</p>
     </div>
   </section>
 
@@ -1398,15 +1438,15 @@ body.exploring #sky:active { cursor: grabbing; }
     <h2 class="title" id="profile-title">From interface to infrastructure.</h2>
     <dl class="glance" id="glance"></dl>
     <div class="prose">
-      <p>I build the front of products in React, Next.js and React Native, and the services behind them in Node.js, Python and Java on PostgreSQL, Supabase or Firebase. On the platform side I write Terraform for AWS and build internal tools that keep deployments secure and auditable.</p>
-      <p>Much of my recent work puts AI to work, from assistants and agents to MCP servers, built so their answers trace back to real data. Many of my projects are designed for South Africa: POPIA, low-data Android phones, people who pay with cash or USSD, and load-shedding.</p>
+      <p>I build the front of products in React, Next.js and TypeScript, and the services behind them in Node.js and Python on PostgreSQL or Supabase. On the platform side I write Terraform for AWS and build internal tools that keep deployments secure and auditable.</p>
+      <p>Much of my recent work puts AI to work, from assistants and agents to MCP servers, built so their answers trace back to real data. Many of my projects are designed for South Africa: POPIA, minibus taxis, low-data Android phones, people who pay with cash or USSD, and load-shedding.</p>
     </div>
 
     <h3 class="subhead"><span class="jp" lang="ja" aria-hidden="true">流儀</span>How I build</h3>
     <ul class="principles">
       <li>
         <h4>Evidence over invention</h4>
-        <p>ApplyAI won’t write a CV line it can’t trace to a real fact. The WeServa chatbot answers only from real search results, and the product finder tags every figure as verified, estimated or unverified.</p>
+        <p>ApplyAI won’t write a CV line it can’t trace to a real fact. TaxiSign marks every fare as confirmed or estimated, and the product finder tags every figure as verified, estimated or unverified.</p>
       </li>
       <li>
         <h4>Secure by default</h4>
@@ -1414,7 +1454,7 @@ body.exploring #sky:active { cursor: grabbing; }
       </li>
       <li>
         <h4>Built for South Africa</h4>
-        <p>TollPass SA takes USSD and retail-voucher top-ups for people without smartphones or bank cards. Project Ubuntu targets low-data Android phones, and ChargeRescue plans for load-shedding.</p>
+        <p>TollPass SA takes USSD and retail-voucher top-ups for people without smartphones or bank cards. TaxiSign keeps working offline on a weak signal, and No Junk Calls uses POPIA to make companies delete your number.</p>
       </li>
     </ul>
   </section>
@@ -1455,14 +1495,14 @@ body.exploring #sky:active { cursor: grabbing; }
   </section>
 
   <section id="more" class="section col" aria-labelledby="more-title">
-    <p class="kicker"><span class="ep" aria-hidden="true">第6話</span><span class="jp" lang="ja" aria-hidden="true">作品集</span><span id="moreKicker">19 more</span></p>
+    <p class="kicker"><span class="ep" aria-hidden="true">第6話</span><span class="jp" lang="ja" aria-hidden="true">作品集</span><span id="moreKicker">17 more</span></p>
     <h2 class="title" id="more-title">More projects</h2>
     <p class="intro">Grouped by discipline. The orbit button finds a project in the sky.</p>
     <div id="moreList"></div>
   </section>
 
   <section id="stack" class="section col" aria-labelledby="stack-title">
-    <p class="kicker"><span class="ep" aria-hidden="true">第7話</span><span class="jp" lang="ja" aria-hidden="true">技術</span><span id="stackKicker">49 technologies</span></p>
+    <p class="kicker"><span class="ep" aria-hidden="true">第7話</span><span class="jp" lang="ja" aria-hidden="true">技術</span><span id="stackKicker">46 technologies</span></p>
     <h2 class="title" id="stack-title">Technologies</h2>
     <p class="intro">The number shows how many of these projects use each one. Select a technology to see which. A dashed outline means it’s part of a build plan, not built yet.</p>
     <div id="stackGroups" class="tgroups"></div>
@@ -1471,7 +1511,7 @@ body.exploring #sky:active { cursor: grabbing; }
   <section id="github" class="section col" aria-labelledby="gh-title">
     <p class="kicker"><span class="ep" aria-hidden="true">第8話</span><span class="jp" lang="ja" aria-hidden="true">記録</span><span>@thabo11-hub</span></p>
     <h2 class="title" id="gh-title">On GitHub</h2>
-    <p class="intro">InnerCycle and other team work live in private repositories. Here is what’s public, as of October 2026.</p>
+    <p class="intro">Some team and client work lives in private repositories. Here is what’s public, as of October 2026.</p>
     <dl class="ghstats" id="ghStats"></dl>
     <p class="ach" id="ghAch"></p>
     <h3 class="subhead"><span class="jp" lang="ja" aria-hidden="true">言語</span>Primary language by repository</h3>
@@ -1529,7 +1569,7 @@ body.exploring #sky:active { cursor: grabbing; }
   <div class="ex-bar">
     <div class="ex-head">
       <h2 class="ex-title" id="exTitle">The sky</h2>
-      <p class="ex-sub" id="exSub">29 projects · 49 technologies</p>
+      <p class="ex-sub" id="exSub">30 projects · 46 technologies</p>
       <div class="ex-legend" id="exLegend"></div>
       <p class="ex-key"><span><i class="k-star"></i>project, sized by scope</span><span><i class="k-ring"></i>technology</span></p>
     </div>
@@ -1559,9 +1599,9 @@ body.exploring #sky:active { cursor: grabbing; }
     formEndpoint: '',
     /* where this site is hosted (for example https://your-site.vercel.app). The claude.ai copy of the page
        cannot send email, so its form hands messages to this address. Empty: the claude.ai copy says to email instead. */
-    siteUrl: '',
+    siteUrl: 'https://three-js-portfolio-woad-two.vercel.app',
     location: 'Johannesburg, South Africa · SAST (UTC+2)',
-    updated: 'October 2026'
+    updated: 'November 2026'
   };
 
   /* from LinkedIn, October 2026 */
@@ -1637,8 +1677,12 @@ body.exploring #sky:active { cursor: grabbing; }
   /* every project with a hosted link */
   var LIVE = [
     { group: 'Recent builds', items: [
+      { id: 'taxisign', name: 'TaxiSign', desc: 'Find the hand sign and fare for your taxi, see routes and departures posted by drivers, find ranks on a map, and share your trip live with family.', href: 'https://taxisign.vercel.app' },
+      { id: 'eventpulse', name: 'Pulse Events', desc: 'Discover events by city and vibe, book tickets and keep QR passes in a wallet. Hosts and gate staff get their own tools.', href: 'https://thabo11-hub-event-pulse.vercel.app' },
+      { id: 'stokvel', name: 'Stokvel', desc: 'Contributions, meetings and payouts for every stokvel you belong to, confirmed by its treasurer.', href: 'https://stockvel-five.vercel.app' },
+      { id: 'mailguard', name: 'EmailSpamdetection', desc: 'Guard Gmail against phishing and dangerous attachments in three steps from your phone, or check one suspicious email in the browser.', href: 'https://emailspamdetection-kappa.vercel.app' },
+      { id: 'nojunk', name: 'No Junk Calls', desc: 'Silence spam calls, send POPIA stop-and-delete letters and clear your inbox. Free, with no sign-up.', href: 'https://nojunkcalls.vercel.app' },
       { id: 'tollpass', name: 'TollPass SA', desc: 'Plan a trip, buy a signed QR pass and try the lane check in demo mode.', href: 'https://claude.ai/artifact/9eBFR8zat7vbTqv6hGYiWs' },
-      { id: 'taxisign', name: 'TaxiSign', desc: 'Look up the hand sign and fare for your taxi, see routes posted by drivers, and share your trip live with family.', href: 'https://claude.ai/artifact/VhkD2gqWShDkVWrMXwqC9Z' },
       { id: 'anton', name: 'Anton', desc: 'Ask about SARS, SASSA, UIF or Home Affairs and get plain answers, deadlines and helpline numbers.', href: 'https://claude.ai/artifact/CxNei9oNyjsviUp5sSbzvh' },
       { id: 'billfighter', name: 'Bill Fighter', desc: 'Photograph a municipal bill; it flags overcharges and drafts the section 102 dispute letter.', href: 'https://claude.ai/artifact/SATDQSz3t6A3HBgCuMueWG' },
       { id: 'elandm', name: 'El & M', desc: 'Direct-booking site for a Maboneng studio: photos, availability, FAQs and booking over WhatsApp.', href: 'https://elandm.lovable.app' },
@@ -1701,24 +1745,52 @@ body.exploring #sky:active { cursor: grabbing; }
       ],
       outcome: 'Working build: a Docker Compose stack with the gateway, the MCP server and PostgreSQL, with core tests passing.',
       stack: ['Python', 'MCP', 'Terraform', 'AWS', 'OIDC / JWT', 'LiteLLM', 'Amazon Bedrock', 'Docker', 'PostgreSQL'] },
-    { id: 'innercycle', name: 'InnerCycle', d: 'product', tier: 'case', scope: 9, status: 'Team project', year: '2026', role: 'Lead frontend developer',
-      summary: 'A cycle-tracking wellness app for web and mobile, built around a live cycle-ring visualisation.',
-      problem: 'Most cycle trackers assume a natural cycle. People on contraception need a home screen built around their method.',
+    { id: 'taxisign', name: 'TaxiSign', d: 'product', tier: 'case', scope: 8, status: 'Live', year: '2026',
+      link: { href: 'https://taxisign.vercel.app', label: 'taxisign.vercel.app' },
+      summary: 'A phone web app for minibus-taxi commuters in Gauteng: the hand sign and fare for each destination, routes and departures posted by drivers, taxi ranks on a map, and live trip sharing for family.',
+      problem: 'Minibus taxis carry most of South Africa’s commuters, but the hand signs, fares and routes live in people’s heads. Newcomers can’t tell which sign stops their taxi or what the trip costs, and family can’t follow a ride home.',
       flow: [
-        ['Onboarding', 'Method, key dates and preferences'],
-        ['Profile in Firestore', 'One source of truth for web and mobile'],
-        ['Cycle mode', 'Natural, simulated or symptom-only'],
-        ['Method dashboard', 'Pill, patch, injection, implant or IUD'],
-        ['Cycle ring and countdowns', 'Phases, a live day marker, refill and replacement dates']
+        ['Phone web app', 'Plain HTML, CSS and JavaScript · installs to the home screen and works offline'],
+        ['Serverless API', 'Vercel functions · validated, rate-limited posts from drivers and commuters'],
+        ['Postgres and Blob storage', 'Routes, fares, rank pins and sign photos, with location data stripped from photos'],
+        ['Moderation', 'Claude checks each sign photo first, then the team approves, verifies or hides posts'],
+        ['Live trips', 'A private token for the rider’s phone and a read-only link for family']
       ],
       decisions: [
-        'One dashboard component with a hero per method, all sharing a single progress ring.',
-        'Copper or hormonal IUD decides between predictive and symptom-only tracking.',
-        'Replacement countdowns are flagged as estimates when only the IUD type is known, not the brand.'
+        'No framework and no build step, so it loads fast on low-end phones and keeps working offline with the last data it saw.',
+        'Fares are marked confirmed or estimated, signs from published guides are labelled Reported, and community photos wait for approval, so nobody mistakes a guess for a fact.',
+        'Only the rider’s phone can post to a trip. Trips expire after 24 hours and are deleted after two days.'
       ],
-      outcome: 'Team project across five repositories. I led the Next.js web frontend: dashboard, daily log, phase calendar, insights, a partner view and onboarding.',
-      stack: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'React Native', 'Expo Router', 'NativeWind', 'Firebase'] },
+      outcome: 'Live on Vercel with Ride, Signs, Ranks, Driver and Suggest tabs, an admin console for moderation and strike notices, and draft translations in isiZulu, Sesotho and Afrikaans.',
+      stack: ['JavaScript', 'HTML & CSS', 'Node.js', 'PostgreSQL', 'Vercel', 'Leaflet', 'Claude API'] },
 
+    { id: 'eventpulse', name: 'Pulse Events', d: 'product', tier: 'featured', scope: 7, status: 'Live', year: '2026',
+      link: { href: 'https://thabo11-hub-event-pulse.vercel.app', label: 'vercel.app' },
+      summary: 'Mobile-first event discovery and ticketing for South Africa: find events by city and vibe, book tickets and keep QR passes in a wallet.',
+      points: [
+        'Checkout prices and promo codes are worked out on the server, then issue orders, QR passes and a VAT tax invoice.',
+        'Hosts post events through an admin review queue and track sales and check-ins. Gate staff scan passes, with duplicate-entry flags, a supervisor PIN override and a shift report.',
+        'Express API with scrypt passwords, HttpOnly sessions, CSRF tokens, rate limits, input schemas and a security log.'
+      ],
+      stack: ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'Node.js', 'Express', 'libSQL / Turso'] },
+    { id: 'stokvel', name: 'Stokvel', d: 'platform', tier: 'featured', scope: 6, status: 'Live', year: '2026',
+      link: { href: 'https://stockvel-five.vercel.app', label: 'vercel.app' },
+      summary: 'A shared contributions book for stokvels: one login, many stokvels, and a treasurer who confirms every payment.',
+      points: [
+        'The treasurer confirms who paid in full, late or in part, takes the meeting register and stamps payouts. Members see their own record and the group’s total.',
+        'The API checks every role on every request. Members join through one-time invite links, and proofs of payment open only for the treasurer and the payer.',
+        'scrypt password hashing, HttpOnly session cookies and lockouts after repeated wrong passwords, tracked in Postgres across every instance.'
+      ],
+      stack: ['JavaScript', 'HTML & CSS', 'Node.js', 'PostgreSQL', 'Vercel'] },
+    { id: 'mailguard', name: 'EmailSpamdetection', d: 'platform', tier: 'featured', scope: 6, status: 'Live', year: '2026',
+      link: { href: 'https://emailspamdetection-kappa.vercel.app', label: 'vercel.app' },
+      summary: 'Keeps phishing, scams and junk out of Gmail and Outlook, running inside the user’s own Google account.',
+      points: [
+        'Checks new mail for fake senders, look-alike domains, failed sender checks, risky links and dangerous attachments, including inside zip files, and moves risky mail aside without deleting it.',
+        'Lists every website that emails you with a one-tap unsubscribe, and clears old mail only after you approve it.',
+        'Set up from a phone in three steps as a private Apps Script web app; Outlook inboxes connect through Microsoft Graph. Tests cover attacks, detection and a real-browser XSS check.'
+      ],
+      stack: ['Google Apps Script', 'JavaScript', 'HTML & CSS', 'Microsoft Graph', 'Playwright'] },
     { id: 'verify', name: 'Verify', d: 'product', tier: 'featured', scope: 7, status: 'Team project', role: 'Frontend developer',
       summary: 'A media-literacy platform: paste a post, link or claim and learn why it may be misleading. It teaches people instead of just labelling things fake.',
       points: [
@@ -1727,15 +1799,6 @@ body.exploring #sky:active { cursor: grabbing; }
         'Learn challenges, and an Insights page computed from the reader’s own history.'
       ],
       stack: ['React', 'TypeScript', 'Vite', 'FastAPI', 'Web Speech API'] },
-    { id: 'taxisign', name: 'TaxiSign', d: 'product', tier: 'featured', scope: 6, status: 'Prototype', year: '2026',
-      link: { href: 'https://claude.ai/artifact/VhkD2gqWShDkVWrMXwqC9Z', label: 'claude.ai' },
-      summary: 'A companion for minibus-taxi commuters in Gauteng: the hand sign and fare for each destination, routes posted by drivers, and live trip sharing for family.',
-      points: [
-        'Drivers post routes and fare changes; commuters add photos of hand signs, marked unverified until checked.',
-        'Share my trip sends a live status link over WhatsApp, with police and emergency numbers on hand.',
-        'English, isiZulu, Sesotho and Afrikaans, with an offline cache for weak signal.'
-      ],
-      stack: ['JavaScript', 'HTML & CSS'] },
     { id: 'applyai', name: 'ApplyAI', d: 'ai', tier: 'featured', scope: 6, status: 'Prototype',
       summary: 'An AI job-application agent with one hard rule: it never invents experience.',
       points: [
@@ -1771,13 +1834,6 @@ body.exploring #sky:active { cursor: grabbing; }
         'People fill in their own name and account number, so the AI never sees them.'
       ],
       stack: ['JavaScript', 'HTML & CSS', 'Claude API'] },
-    { id: 'weserva', name: 'WeServa', d: 'ai', tier: 'featured', scope: 5, status: 'Feature build',
-      summary: 'A marketplace for local service providers. I added a chatbot that finds plumbers, tutors and electricians from a plain-language request.',
-      points: [
-        'Two-step LLM flow: pull search filters out of the message, query Supabase, then reply using only the real results.',
-        'React chat widget with provider cards; a Spring Boot endpoint keeps the API keys on the server.'
-      ],
-      stack: ['React', 'Java', 'Spring Boot', 'Supabase', 'OpenAI API'] },
     { id: 'vault', name: 'Silent Vault Login', d: 'platform', tier: 'featured', scope: 5, status: 'Prototype',
       summary: 'Passwordless banking sign-in built on proof of intent.',
       points: [
@@ -1800,12 +1856,10 @@ body.exploring #sky:active { cursor: grabbing; }
     { id: 'kindred', name: 'Kindred', d: 'product', scope: 5, status: 'Spec and prototypes',
       summary: 'Childcare booking built around child safety: SAPS, NCPR and NRSO clearances, POPIA rules for minors, and two React prototypes.',
       stack: ['React'] },
-    { id: 'eventpulse', name: 'EventPulse', d: 'product', scope: 4, status: 'MVP',
-      summary: 'Event discovery for South African cities, with organiser tools, ticket tiers and parking add-ons, maps and admin moderation.',
-      stack: ['React'] },
-    { id: 'lifevault', name: 'LifeVault', d: 'product', scope: 4, status: 'Prototype',
-      summary: 'A plan for the people you leave behind: a readiness ring, a family checklist, trusted contacts and one-tap PDF export.',
-      stack: ['React', 'jsPDF'] },
+    { id: 'nojunk', name: 'No Junk Calls', d: 'product', scope: 4, status: 'Live', year: '2026',
+      link: { href: 'https://nojunkcalls.vercel.app', label: 'nojunkcalls.vercel.app' },
+      summary: 'Free tools for South Africans to silence spam calls, send POPIA stop-and-delete letters, join the opt-out lists and clear their inbox. No sign-up, and nothing typed leaves the device.',
+      stack: ['JavaScript', 'HTML & CSS'] },
     { id: 'taxassist', name: 'Tax Assist', d: 'product', scope: 3, status: 'Prototype',
       summary: 'A SARS companion that takes taxpayers from IRP5 upload through review and approval to refund tracking.',
       stack: ['React'] },
@@ -1816,9 +1870,6 @@ body.exploring #sky:active { cursor: grabbing; }
       summary: 'Direct-booking website for a short-term rental business, plus its marketing plan.',
       stack: ['Lovable'],
       link: { href: 'https://elandm.lovable.app', label: 'elandm.lovable.app' } },
-    { id: 'lending', name: 'Neighbourhood lending', d: 'product', scope: 3, status: 'Assessment',
-      summary: 'An item-lending app built for a technical assessment, with a decision log and an AI usage log.',
-      stack: ['React', 'TypeScript', 'Vite'] },
     { id: 'wedding', name: 'Wedding invitation', d: 'product', scope: 2, status: 'Site',
       link: { href: 'https://claude.ai/artifact/LgEFVFQewAbFJfWZGnrSC7', label: 'claude.ai' },
       summary: 'An animated invitation with an envelope intro, a live countdown and an RSVP form, built on GSAP ScrollTrigger.',
@@ -1857,14 +1908,13 @@ body.exploring #sky:active { cursor: grabbing; }
   ];
 
   var TECH_GROUPS = [
-    { name: 'Frontend', items: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Vite', 'Tailwind CSS', 'Angular', 'GSAP', 'HTML & CSS'] },
-    { name: 'Mobile', items: ['React Native', 'Expo Router', 'NativeWind'] },
-    { name: 'Backend & APIs', items: ['Node.js', 'Express', 'Python', 'Flask', 'FastAPI', 'Java', 'Spring Boot', 'OpenAPI / Swagger'] },
-    { name: 'Data', items: ['PostgreSQL', 'Supabase', 'Firebase'] },
-    { name: 'Cloud & ops', items: ['AWS', 'Terraform', 'Docker', 'Linux', 'SaltStack', 'n8n', 'DigitalOcean', 'Git', 'boto3'] },
-    { name: 'AI & LLMs', items: ['Claude API', 'OpenAI API', 'MCP', 'LiteLLM', 'Amazon Bedrock', 'Ollama', 'Whisper', 'Kokoro TTS', 'FFmpeg', 'YouTube Data API'] },
+    { name: 'Frontend', items: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Vite', 'Tailwind CSS', 'Angular', 'GSAP', 'Leaflet', 'HTML & CSS'] },
+    { name: 'Backend & APIs', items: ['Node.js', 'Express', 'Python', 'Flask', 'FastAPI', 'OpenAPI / Swagger', 'Google Apps Script', 'Microsoft Graph'] },
+    { name: 'Data', items: ['PostgreSQL', 'Supabase', 'libSQL / Turso'] },
+    { name: 'Cloud & ops', items: ['AWS', 'Terraform', 'Docker', 'Linux', 'SaltStack', 'n8n', 'Vercel', 'DigitalOcean', 'Git', 'boto3'] },
+    { name: 'AI & LLMs', items: ['Claude API', 'MCP', 'LiteLLM', 'Amazon Bedrock', 'Ollama', 'Whisper', 'Kokoro TTS', 'FFmpeg', 'YouTube Data API'] },
     { name: 'Security & testing', items: ['OIDC / JWT', 'Web Crypto', 'Playwright'] },
-    { name: 'Other tools', items: ['Lovable', 'jsPDF', 'Nodemailer', 'Web Speech API'] }
+    { name: 'Other tools', items: ['Lovable', 'Nodemailer', 'Web Speech API'] }
   ];
   /* used in professional work outside the projects above */
   var EXPERIENCED = { 'Angular': 'Also used in a full-stack role on an Angular web platform.' };
@@ -1878,7 +1928,7 @@ body.exploring #sky:active { cursor: grabbing; }
     'HTML & CSS': 'Badge: Cisco HTML Essentials.'
   };
   /* from my GitHub profile and repositories */
-  var ALSO = ['Vue', 'Ionic', 'NestJS', 'C# / .NET', 'MongoDB', 'MySQL', 'Azure', 'GitLab', 'Vercel', 'Netlify', 'Figma', 'WordPress', 'Temporal'];
+  var ALSO = ['Vue', 'Ionic', 'NestJS', 'C# / .NET', 'MongoDB', 'MySQL', 'Azure', 'GitLab', 'Netlify', 'Figma', 'WordPress', 'Temporal'];
 
   /* ---------- derived data ---------- */
   var root = document.documentElement;
@@ -1948,7 +1998,7 @@ body.exploring #sky:active { cursor: grabbing; }
     ['Experience', '4+ years in industry, from full-stack development to platform engineering'],
     ['Core stack', 'React · Next.js · TypeScript · Node.js · Python · PostgreSQL · AWS · Terraform'],
     ['Certified', 'HashiCorp Terraform Associate (004) · Microsoft Azure Fundamentals · ' + badgeTotal + ' verified badges on Credly'],
-    ['Track record', PROJECTS.length + ' projects · ' + liveCount + ' live · ' + GITHUB.repos + ' public repositories · 2 team builds'],
+    ['Track record', PROJECTS.length + ' projects · ' + liveCount + ' live · ' + GITHUB.repos + ' public repositories'],
     ['Based in', CONFIG.location]
   ].map(function (r) { return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('');
 
@@ -2047,7 +2097,7 @@ body.exploring #sky:active { cursor: grabbing; }
   /* live projects: everything with a hosted link */
   var hostOf = function (u) {
     var h = u.replace(/^https?:\/\//, '').split('/')[0].replace(/^www\./, '');
-    return h.length > 22 ? h.split('.').slice(-2).join('.') : h;
+    return h.length > 36 ? h.split('.').slice(-2).join('.') : h;
   };
   $('#liveList').innerHTML = LIVE.map(function (g) {
     return '<div class="lgroup">' +
@@ -2954,33 +3004,60 @@ body.exploring #sky:active { cursor: grabbing; }
       if (ch) attr.needsUpdate = true;
     }
 
-    /* ---------- the name, drawn in particles ---------- */
-    var textPts = null, textAspect = 3.1, textMode = '';
+    /* ---------- the name: a solid title card ringed by an aura of particles ---------- */
+    var textPts = null, textAspect = 3.1, textMode = '', textSpec = null;
+    /* as shares of the font size: the card's keyline, the gap the dots keep from it, and the aura's reach */
+    var KEYLINE = 0.07, CLEAR = 0.11, NEAR = 0.19, AURA = 0.3;
+    var nameFont = function (s) { return '400 ' + s + 'px "Dela Gothic One", "Arial Black", Impact, sans-serif'; };
+    /* everything the letters enclose, counters included, is solid: flood the clear pixels in from the border */
+    function outsideOf(img, w, h) {
+      var n = w * h, out = new Uint8Array(n), q = new Int32Array(n), qh = 0, qt = 0;
+      var push = function (k) { if (!out[k] && img[k * 4 + 3] < 128) { out[k] = 1; q[qt++] = k; } };
+      var x, y, i;
+      for (x = 0; x < w; x++) { push(x); push((h - 1) * w + x); }
+      for (y = 0; y < h; y++) { push(y * w); push(y * w + w - 1); }
+      while (qh < qt) {
+        i = q[qh++]; x = i % w;
+        if (x > 0) push(i - 1);
+        if (x < w - 1) push(i + 1);
+        if (i >= w) push(i - w);
+        if (i < n - w) push(i + w);
+      }
+      return out;
+    }
+    function drawName(g, s, kx, ky, ox, oy, fn) {
+      g.setTransform(kx * s.sx, 0, 0, ky, kx * ((s.cw / 2) * (1 - s.sx)) + ox, oy);
+      g.font = nameFont(s.fs);
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.fillStyle = '#fff'; g.strokeStyle = '#fff';
+      s.lines.forEach(function (l, li) { fn(l, s.cw / 2, s.ch / 2 + (li - (s.lines.length - 1) / 2) * s.fs); });
+      g.setTransform(1, 0, 0, 1, 0, 0);
+    }
     function sampleText() {
       var lines = W < 640 ? PF.CONFIG.particle.narrow : PF.CONFIG.particle.wide;
       textMode = lines.join('|') + (W < 640 ? ':n' : ':w');
       var cw = 1400, ch = lines.length > 1 ? 920 : 440;
       var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
       var g = cv.getContext('2d', { willReadFrequently: true });
-      var font = function (s) { return '400 ' + s + 'px "Dela Gothic One", "Arial Black", Impact, sans-serif'; };
       var fs = 360;
-      g.font = font(fs);
+      g.font = nameFont(fs);
       var mw = 1;
       lines.forEach(function (l) { mw = Math.max(mw, g.measureText(l).width); });
       /* the heavy face is very wide; on phones, condense it so the letters stay tall enough to read */
       var sx = W < 640 ? 0.7 : 1;
-      fs = Math.min(fs * (cw * 0.94) / (mw * sx), (ch * 0.94) / (lines.length * 1.02));
-      g.font = font(fs);
-      g.textAlign = 'center'; g.textBaseline = 'middle';
-      /* sample the letters twice: their outline, which keeps the heavy letterforms readable, and their fill */
-      var minX = cw, maxX = 0, minY = ch, maxY = 0;
-      var sample = function (draw) {
+      fs = Math.min(fs * (cw * 0.84) / (mw * sx), (ch * 0.74) / (lines.length * 1.02));
+      var spec = { lines: lines, fs: fs, sx: sx, cw: cw, ch: ch };
+      var grab = function (fn) {
         g.clearRect(0, 0, cw, ch);
-        draw();
-        var img = g.getImageData(0, 0, cw, ch).data, pts = [];
+        drawName(g, spec, 1, 1, 0, 0, fn);
+        return g.getImageData(0, 0, cw, ch).data;
+      };
+      var minX = cw, maxX = 0, minY = ch, maxY = 0;
+      var collect = function (keep) {
+        var pts = [];
         for (var y = 0; y < ch; y += 2) {
           for (var x = 0; x < cw; x += 2) {
-            if (img[(y * cw + x) * 4 + 3] > 140) {
+            if (keep(y * cw + x)) {
               pts.push([x, y]);
               if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
             }
@@ -2989,29 +3066,29 @@ body.exploring #sky:active { cursor: grabbing; }
         for (var m = pts.length - 1; m > 0; m--) { var j = Math.floor(rnd() * (m + 1)); var tmp = pts[m]; pts[m] = pts[j]; pts[j] = tmp; }
         return pts;
       };
-      var each = function (fn) {
-        g.setTransform(sx, 0, 0, 1, (cw / 2) * (1 - sx), 0);
-        lines.forEach(function (l, li) { fn(l, cw / 2, ch / 2 + (li - (lines.length - 1) / 2) * fs * 1.0); });
-        g.setTransform(1, 0, 0, 1, 0, 0);
-      };
-      var edge = sample(function () {
-        g.strokeStyle = '#fff'; g.lineWidth = Math.max(4, fs * 0.05); g.lineJoin = 'round';
-        each(function (l, x, y) { g.strokeText(l, x, y); });
-      });
-      var fill = sample(function () { g.fillStyle = '#fff'; each(function (l, x, y) { g.fillText(l, x, y); }); });
-      if (edge.length < 20 || fill.length < 20) return;
+      /* the dots gather in two places: inside the letters, where they spell the name during the intro and
+         end up under the solid card, and in an aura round its outer edge that never enters a counter */
+      var solid = grab(function (l, x, y) { g.lineWidth = fs * CLEAR * 2; g.fillText(l, x, y); g.strokeText(l, x, y); });
+      var outside = outsideOf(solid, cw, ch);
+      var glyph = grab(function (l, x, y) { g.fillText(l, x, y); });
+      var inner = collect(function (k) { return glyph[k * 4 + 3] > 140; });
+      /* the aura thins out with distance: most dots hug the keyline, fewer drift further out */
+      var near = grab(function (l, x, y) { g.lineWidth = fs * NEAR * 2; g.fillText(l, x, y); g.strokeText(l, x, y); });
+      var halo = grab(function (l, x, y) { g.lineWidth = fs * AURA * 2; g.fillText(l, x, y); g.strokeText(l, x, y); });
+      var auraIn = collect(function (k) { return outside[k] && near[k * 4 + 3] > 140; });
+      var auraOut = collect(function (k) { return outside[k] && near[k * 4 + 3] <= 140 && halo[k * 4 + 3] > 140; });
+      if (inner.length < 20 || auraIn.length < 20 || auraOut.length < 20) return;
+      var aura = [];
+      for (var a = 0, an = Math.ceil(NCORE * 0.8); a < an; a++) aura.push(a % 10 < 7 ? auraIn[a % auraIn.length] : auraOut[a % auraOut.length]);
       var bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
       textAspect = bw / bh;
-      /* a faint solid copy of the name sits under the stars and helps it read on small screens */
-      try {
-        var gc = document.createElement('canvas'); gc.width = bw; gc.height = bh;
-        gc.getContext('2d').drawImage(cv, minX, minY, bw, bh, 0, 0, bw, bh);
-        ghostURL = gc.toDataURL('image/png');
-      } catch (e) { ghostURL = ''; }
-      var edgeShare = W < 640 ? 0.8 : 0.72, out = [];
+      spec.minX = minX; spec.minY = minY; spec.bw = bw; spec.bh = bh;
+      textSpec = spec;
+      titleKey = '';
+      var auraShare = 0.74, out = [];
       for (var k = 0; k < NCORE; k++) {
-        var useEdge = k < NCORE * edgeShare;
-        var src = useEdge ? edge : fill, idx = useEdge ? k : k - Math.ceil(NCORE * edgeShare);
+        var useAura = k < NCORE * auraShare;
+        var src = useAura ? aura : inner, idx = useAura ? k : k - Math.ceil(NCORE * auraShare);
         var pt = src[idx % src.length];
         out.push([(pt[0] - minX) / bw - 0.5, (pt[1] - minY) / bh - 0.5]);
       }
@@ -3028,8 +3105,8 @@ body.exploring #sky:active { cursor: grabbing; }
       var contentTop = hr.top + window.scrollY;
       var left = Math.max(16, hr.left);
       var freeH = Math.max(90, contentTop - 18 - top);
-      var maxW = W >= 900 ? Math.min(W - left - 24, Math.min(W * 0.68, 1080)) : W - 2 * left;
-      var nameW = Math.min(maxW, freeH * 0.8 * textAspect);
+      var maxW = W >= 900 ? Math.min(W - left - 24, Math.min(W * 0.72, 1140)) : W - 2 * left;
+      var nameW = Math.min(maxW, freeH * 0.86 * textAspect);
       var nameH = nameW / textAspect;
       var cx = left + nameW / 2, cy = top + freeH * 0.5;
       var vh = 2 * 10 * FOV_T, vw = vh * W / H;
@@ -3044,23 +3121,59 @@ body.exploring #sky:active { cursor: grabbing; }
         P0[q * 3 + 2] = (rnd() - 0.5) * 0.35;
       }
       posAttr.needsUpdate = true;
+      placeTitle(left, cy - nameH / 2, nameW, nameH);
       placeMoon(left, nameW, nameH, cy, top);
     }
+    /* the title card's masks are drawn at screen resolution from the same text, so the card sits exactly
+       inside its aura. The keyline mask also fills the counters, so no dot or moon shows inside a letter. */
+    var card = document.getElementById('nameCard'), titleKey = '';
+    var cardLayers = card ? Array.prototype.slice.call(card.querySelectorAll('.nc-layer')) : [];
+    function placeTitle(left, top, nameW, nameH) {
+      if (!card || !textSpec || nameW < 4 || nameH < 4) return;
+      var s = textSpec;
+      var mw = Math.max(2, Math.round(Math.min(2800, nameW * Math.min(window.devicePixelRatio || 1, 2))));
+      var mh = Math.max(2, Math.round(mw * nameH / nameW));
+      var key = textMode + '|' + mw + 'x' + mh;
+      if (key !== titleKey) {
+        try {
+          var cv = document.createElement('canvas'); cv.width = mw; cv.height = mh;
+          var g = cv.getContext('2d', { willReadFrequently: true });
+          var kx = mw / s.bw, ky = mh / s.bh, ox = -kx * s.minX, oy = -ky * s.minY;
+          drawName(g, s, kx, ky, ox, oy, function (l, x, y) { g.fillText(l, x, y); });
+          var ink = 'url(' + cv.toDataURL('image/png') + ')';
+          g.clearRect(0, 0, mw, mh);
+          drawName(g, s, kx, ky, ox, oy, function (l, x, y) { g.lineWidth = s.fs * KEYLINE * 2; g.fillText(l, x, y); g.strokeText(l, x, y); });
+          var im = g.getImageData(0, 0, mw, mh), out = outsideOf(im.data, mw, mh);
+          for (var k = 0, n = mw * mh; k < n; k++) if (!out[k]) im.data[k * 4 + 3] = 255;
+          g.putImageData(im, 0, 0);
+          var edge = 'url(' + cv.toDataURL('image/png') + ')';
+          cardLayers.forEach(function (el) {
+            var m = (el.classList.contains('nc-ink') || el.classList.contains('nc-shine')) ? ink : edge;
+            el.style.webkitMaskImage = m;
+            el.style.maskImage = m;
+          });
+          titleKey = key;
+        } catch (e) { return; }
+      }
+      var cs = card.style;
+      cs.left = left.toFixed(1) + 'px'; cs.top = top.toFixed(1) + 'px';
+      cs.width = nameW.toFixed(1) + 'px'; cs.height = nameH.toFixed(1) + 'px';
+      cs.setProperty('--nc-d', Math.max(3, nameH * 0.05).toFixed(1) + 'px');
+      card.classList.add('on');
+      /* the motion script plays the card's entrance; tell it the card is in place */
+      if (!PF.title) {
+        PF.title = { el: card, at: performance.now() };
+        try { document.dispatchEvent(new CustomEvent('pf:title')); } catch (e) {}
+      }
+    }
     /* the crimson moon sits behind the right half of the name; focus lines radiate from it */
-    var heroFx = document.getElementById('heroFx'), ghostEl = document.getElementById('nameGhost'), ghostURL = '';
+    var heroFx = document.getElementById('heroFx');
     function placeMoon(left, nameW, nameH, cy, top) {
       if (!heroFx) return;
-      if (ghostEl && ghostURL) {
-        var gs = ghostEl.style;
-        gs.left = left.toFixed(1) + 'px'; gs.top = (cy - nameH / 2).toFixed(1) + 'px';
-        gs.width = nameW.toFixed(1) + 'px'; gs.height = nameH.toFixed(1) + 'px';
-        gs.webkitMaskImage = gs.maskImage = 'url(' + ghostURL + ')';
-        gs.display = 'block';
-      }
       var heroEl = document.getElementById('top');
       var heroBottom = heroEl.getBoundingClientRect().bottom + window.scrollY;
       var wide = W >= 900;
-      var md = wide ? clamp(nameH * 2.2, 300, Math.min(H * 0.6, 540)) : clamp(nameH * 3.4, 210, W * 0.8);
+      var md = wide ? clamp(nameH * 1.5, 300, Math.min(H * 0.6, 540)) : clamp(nameH * 2.3, 210, W * 0.8);
       var mx = left + nameW * (wide ? 0.7 : 0.64);
       mx = Math.min(mx, W - md / 2 - 12);
       var my = Math.max(cy, top + 4 + md / 2);
@@ -3559,7 +3672,7 @@ body.exploring #sky:active { cursor: grabbing; }
     var cur = { w: [1, 0, 0, 0, 0], graph: 0, tech: 0, veil: 0, spin: 0, cmix: 0.35, offX: 0, offY: 0, sel: 0 };
     var camPos = new T.Vector3(0, 0, 10), look = new T.Vector3(), tmpV = new T.Vector3(), lookT = new T.Vector3(), fpos = new T.Vector3();
     var veilEl = document.getElementById('veil'), lastVeil = '';
-    var spin = 0, time = 0, last = performance.now(), raf = 0, repel = 0;
+    var spin = 0, time = 0, last = performance.now(), raf = 0, repel = 0, lit = 0;
     var perf = { frames: 0, sum: 0, done: false };
     function setPR(v) {
       PR = v;
@@ -3649,7 +3762,9 @@ body.exploring #sky:active { cursor: grabbing; }
       u.uW4.value = cur.w[4];
       u.uColorMix.value = cur.cmix;
       u.uDim.value = dim;
-      u.uBoost.value = light ? 1 : 1 + 0.45 * cur.w[0];
+      /* once the solid title is in, the dots step back to an aura */
+      lit += ((PF.heroLit ? 1 : 0) - lit) * k;
+      u.uBoost.value = light ? 1 - 0.5 * lit * cur.w[0] : (1 + 0.45 * cur.w[0]) * (1 - 0.38 * lit * cur.w[0]);
       u.uRepel.value = repel * cur.w[0] * (intro >= 1 ? 1 : 0);
 
       graph.rotation.y = spin;
@@ -3693,6 +3808,184 @@ body.exploring #sky:active { cursor: grabbing; }
 
     return { enterExplore: enterExplore, exitExplore: exitExplore, applyTheme: applyTheme };
   }
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" onerror="document.documentElement.classList.remove('anim-wait');"></script>
+<script>
+/* motion, played by anime.js: the title card's slash, the hero's entrance and each panel as it scrolls in.
+   The page is complete without it: if anime.js doesn't load, or motion is reduced, nothing stays hidden. */
+(function () {
+  'use strict';
+  var PF = window.PF, A = window.anime, root = document.documentElement;
+  var endWait = function () { root.classList.remove('anim-wait'); };
+  if (!PF) { endWait(); return; }
+  var run = !!A && !PF.reduce;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var clearInline = function (a) {
+    (a.animatables || []).forEach(function (x) { x.target.style.opacity = ''; x.target.style.transform = ''; });
+  };
+
+  /* ---------- the title card: a slash cuts the name in, the drop pops, a glint runs across ---------- */
+  var titleDone = false, glint = null, heroSeen = true;
+  function playTitle() {
+    var t = PF.title;
+    if (titleDone || !t || !t.el) return;
+    titleDone = true;
+    /* if anime.js arrived after the card was already showing, leave it be rather than flash it away */
+    if (!run || (t.at && performance.now() - t.at > 400)) { PF.heroLit = true; return; }
+    var card = t.el, drop = $('.nc-drop', card), shine = $('.nc-shine', card), slash = $('.nc-slash', card);
+    var w = card.offsetWidth, d = parseFloat(card.style.getPropertyValue('--nc-d')) || 6, cut = { p: 0 };
+    var clip = function (p) { card.style.clipPath = 'inset(-40% ' + (100 - p).toFixed(2) + '% -40% -6%)'; };
+    clip(0);
+    drop.style.transform = 'translate(0px, 0px)';
+    var tl = A.timeline();
+    tl.add({
+      targets: cut, p: 100, duration: 640, delay: 950, easing: 'easeInOutQuart',
+      update: function () {
+        clip(cut.p);
+        /* the blade only shows while it is cutting */
+        slash.style.opacity = cut.p > 0.2 && cut.p < 99.6 ? '1' : '0';
+        slash.style.transform = 'translateX(' + (cut.p / 100 * w).toFixed(1) + 'px) skewX(-18deg)';
+      },
+      complete: function () { card.style.clipPath = ''; slash.style.opacity = '0'; PF.heroLit = true; }
+    })
+      .add({ targets: card, scale: [1.045, 1], duration: 650, easing: 'easeOutElastic(1, .65)', complete: function () { card.style.transform = ''; } }, '-=180')
+      .add({ targets: drop, translateX: [0, d], translateY: [0, d], duration: 700, easing: 'easeOutElastic(1, .6)', complete: function () { drop.style.transform = ''; } }, '-=600')
+      .add({ targets: shine, backgroundPosition: ['160% 0%', '-60% 0%'], duration: 950, easing: 'easeInOutSine' }, '-=350');
+    /* the glint comes round again every few seconds while the hero is on screen */
+    glint = A({ targets: shine, backgroundPosition: ['160% 0%', '-60% 0%'], duration: 1100, delay: 6000, easing: 'easeInOutSine', loop: true, autoplay: false });
+    tl.finished.then(function () {
+      card.style.clipPath = ''; card.style.transform = ''; slash.style.opacity = '0';
+      if (heroSeen) glint.play();
+    });
+  }
+
+  /* ---------- the hero's lines, the katakana and the seal ---------- */
+  function split(el) {
+    if (!el) return [];
+    var chars = Array.from(el.textContent.trim());
+    el.textContent = '';
+    return chars.map(function (c) {
+      var s = document.createElement('span');
+      s.textContent = c;
+      s.style.display = 'inline-block';
+      el.appendChild(s);
+      return s;
+    });
+  }
+  function playHero() {
+    /* the lines already showed (motion is reduced, or the 2.5 s safety net fired first): keep them still */
+    if (!run || !root.classList.contains('anim-wait')) { endWait(); return; }
+    var lines = $$('.hero-inner > .eyebrow, .hero-inner > .lede');
+    var plates = $$('.hero-actions > *');
+    var tail = $$('.hero-links, .hero-meta');
+    var kanaRow = split($('.kana-inline')), kanaCol = split($('.hero-fx .kana'));
+    lines.concat(plates, tail, kanaRow, kanaCol).forEach(function (el) { el.style.opacity = '0'; });
+    endWait();
+    A({ targets: lines, opacity: [0, 1], translateY: [14, 0], duration: 760, delay: A.stagger(90, { start: 180 }), easing: 'easeOutCubic', complete: clearInline });
+    /* the buttons slide in like a game menu */
+    A({ targets: plates, opacity: [0, 1], translateX: [-26, 0], duration: 620, delay: A.stagger(90, { start: 420 }), easing: 'easeOutBack', complete: clearInline });
+    A({ targets: tail, opacity: [0, 1], translateY: [10, 0], duration: 700, delay: A.stagger(90, { start: 700 }), easing: 'easeOutCubic', complete: clearInline });
+    A({ targets: kanaRow, opacity: [0, 1], translateX: [-10, 0], duration: 600, delay: A.stagger(60, { start: 120 }), easing: 'easeOutBack', complete: clearInline });
+    A({ targets: kanaCol, opacity: [0, 1], translateY: [-22, 0], duration: 700, delay: A.stagger(70, { start: 1500 }), easing: 'easeOutBack', complete: clearInline });
+    var seal = $('.topbar .seal');
+    if (seal) A({ targets: seal, scale: [1.8, 1], rotate: [-28, -5], opacity: [0, 1], duration: 720, delay: 120, easing: 'easeOutBack', complete: clearInline });
+  }
+
+  /* ---------- panels and rows rise in as they scroll into view ---------- */
+  var KINDS = [
+    ['.section .kicker', 'kicker'], ['.section .title', 'up'], ['p.intro', 'up'], ['.subhead', 'up'],
+    ['.glance > div', 'up'], ['.prose > p', 'up'], ['.principles > li', 'up'],
+    ['.tl-item', 'left'], ['.certs > li', 'up'], ['.bg-head', 'up'], ['.badges > li', 'up'], ['.badge-cta', 'up'],
+    ['.case', 'panel'], ['.project', 'up'], ['.lg-head', 'up'], ['.live-list > li', 'left'],
+    ['.group-head', 'up'], ['.row', 'left'], ['.tgroup', 'up'], ['.ghstats > div', 'up'], ['.ach', 'up'],
+    ['.lang', 'bar'], ['.gh-cta', 'up'], ['.cform', 'panel'], ['.crow', 'up'], ['.foot', 'up']
+  ];
+  var START = { left: 'translateX(-20px)', bar: 'translateX(-20px)', panel: 'translateY(30px)', up: 'translateY(16px)', kicker: 'translateY(16px)' };
+  function countUp(n, delay) {
+    var m = /^(\d+)(.*)$/.exec(n.textContent.trim());
+    if (!m) return;
+    var to = parseInt(m[1], 10), rest = m[2], o = { v: 0 };
+    if (to < 2 || to >= 1900) return; /* years stay as they are */
+    n.textContent = '0' + rest;
+    A({ targets: o, v: to, round: 1, duration: 1200, delay: delay, easing: 'easeOutExpo',
+      update: function () { n.textContent = o.v + rest; },
+      complete: function () { n.textContent = to + rest; } });
+  }
+  function setupReveals() {
+    if (!run || !('IntersectionObserver' in window)) return;
+    var kind = new Map(), vh = window.innerHeight || 800;
+    KINDS.forEach(function (k) {
+      $$(k[0]).forEach(function (el) {
+        if (kind.has(el) || el.closest('.hero')) return;
+        var r = el.getBoundingClientRect();
+        /* only what is still below the fold waits; anything already on screen stays as it is */
+        if (r.height === 0 || r.top < vh) return;
+        kind.set(el, k[1]);
+      });
+    });
+    kind.forEach(function (k, el) {
+      el.style.opacity = '0';
+      el.style.transform = START[k];
+      if (k === 'bar') { var b = $('.bar', el); if (b) b.style.width = '0%'; }
+      if (k === 'kicker') { var ep = $('.ep', el); if (ep) { ep.style.opacity = '0'; ep.style.transform = 'translateX(-24px)'; } }
+    });
+    var extras = function (el, k, delay) {
+      if (k === 'kicker') {
+        var ep = $('.ep', el);
+        if (ep) A({ targets: ep, opacity: [0, 1], translateX: [-24, 0], duration: 650, delay: delay + 90, easing: 'easeOutBack', complete: clearInline });
+      } else if (k === 'bar') {
+        var b = $('.bar', el), to = b ? (getComputedStyle(b).getPropertyValue('--w').trim() || '100%') : '';
+        if (b) A({ targets: b, width: ['0%', to], duration: 950, delay: delay + 150, easing: 'easeOutExpo', complete: function () { b.style.width = ''; } });
+      } else if (el.classList.contains('project')) {
+        var lv = $('.lv', el);
+        if (lv) A({ targets: lv, scale: [0.4, 1], opacity: [0, 1], duration: 600, delay: delay + 260, easing: 'easeOutBack', complete: clearInline });
+      }
+      $$('dd, .count', el).concat(el.matches('.count') ? [el] : []).forEach(function (n) { countUp(n, delay + 120); });
+    };
+    var io = new IntersectionObserver(function (entries) {
+      var batch = entries.filter(function (en) { return en.isIntersecting && kind.has(en.target); }).map(function (en) { return en.target; });
+      if (!batch.length) return;
+      batch.sort(function (a, b) { return a.getBoundingClientRect().top - b.getBoundingClientRect().top; });
+      var ks = batch.map(function (el) { var k = kind.get(el); kind.delete(el); io.unobserve(el); return k; });
+      var lag = function (i) { return Math.min(i, 8) * 70; };
+      A({
+        targets: batch,
+        opacity: [0, 1],
+        translateX: function (el, i) { return (ks[i] === 'left' || ks[i] === 'bar') ? [-20, 0] : [0, 0]; },
+        translateY: function (el, i) { return ks[i] === 'panel' ? [30, 0] : (ks[i] === 'up' || ks[i] === 'kicker') ? [16, 0] : [0, 0]; },
+        duration: function (el, i) { return ks[i] === 'panel' ? 900 : 700; },
+        delay: function (el, i) { return lag(i); },
+        easing: 'easeOutCubic',
+        complete: clearInline
+      });
+      batch.forEach(function (el, i) { extras(el, ks[i], lag(i)); });
+    }, { rootMargin: '0px 0px -7% 0px', threshold: 0 });
+    kind.forEach(function (k, el) { io.observe(el); });
+    /* printing shows everything at once */
+    window.addEventListener('beforeprint', function () {
+      kind.forEach(function (k, el) {
+        el.style.opacity = ''; el.style.transform = '';
+        $$('.ep, .bar', el).forEach(function (x) { x.style.opacity = ''; x.style.transform = ''; x.style.width = ''; });
+      });
+      kind.clear();
+    });
+  }
+
+  /* the glint rests while the hero is off screen */
+  var hero = $('#top');
+  if (hero && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (en) {
+      heroSeen = en[0].isIntersecting;
+      if (glint) { if (heroSeen) glint.play(); else glint.pause(); }
+    }).observe(hero);
+  }
+
+  document.addEventListener('pf:title', playTitle);
+  playTitle();
+  playHero();
+  setupReveals();
 })();
 </script>
 </body>

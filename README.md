@@ -2,13 +2,15 @@
 
 Portfolio and CV of **Thabo Eldridge Sodi**, Platform Engineer at Absa Group in Johannesburg.
 
-It's a single page built with three.js. Every project is a star in a 3D sky that rearranges itself as you scroll. The page is styled like an anime title card, with a few game touches.
+It's a single page built with three.js and anime.js. Every project is a star in a 3D sky that rearranges itself as you scroll. The page is styled like an anime title card, with a few game touches: the name is cut in by a slash and ringed by an aura of particles, and each panel rises in as it scrolls into view.
+
+Live at [three-js-portfolio-woad-two.vercel.app](https://three-js-portfolio-woad-two.vercel.app).
 
 ## What's on the page
 
 - Experience timeline, certifications and 27 verified Credly badges
-- Three case studies, 13 live projects, selected work and more projects
-- 49 technologies, each linked to the projects that use it
+- Three case studies, 17 live projects, selected work and more projects
+- 46 technologies, each linked to the projects that use it
 - Public GitHub stats
 - A contact form that sends messages to my inbox
 - Explore mode: drag, pinch or scroll to fly around the sky. Press **E** to open it and **Esc** to close it.
@@ -24,7 +26,7 @@ npx serve .
 python3 -m http.server 8000
 ```
 
-three.js r128 loads from cdnjs and the fonts load from Google Fonts, so you need an internet connection.
+three.js r128 and anime.js 3.2.2 load from cdnjs and the fonts load from Google Fonts, so you need an internet connection. If anime.js can't load, the page still shows everything, just without the motion.
 
 ## Deploy
 
@@ -40,7 +42,7 @@ Messages go through [FormSubmit](https://formsubmit.co) to the address in `CONFI
 
 If sending fails, the form keeps the visitor's message and offers Try again.
 
-The claude.ai copy of the page can't send email, because the viewer blocks requests to other sites. Set `CONFIG.siteUrl` to your deployed address and its form opens your site in a new tab with the message filled in, ready to send.
+The claude.ai copy of the page can't send email, because the viewer blocks requests to other sites. `CONFIG.siteUrl` points at the Vercel deployment, so its form opens the site in a new tab with the message filled in, ready to send.
 
 ## Editing content
 
@@ -60,10 +62,11 @@ Colours and fonts are CSS custom properties at the top of the `<style>` block, o
 ## Built with
 
 - three.js r128 (WebGL points and custom shaders)
+- anime.js 3.2.2 (the title card's entrance, the hero and the scroll reveals)
 - Plain JavaScript, HTML and CSS
 - Fonts: Dela Gothic One, Zen Kaku Gothic New and IBM Plex Mono, all from Google Fonts under the SIL Open Font License
 
-Without WebGL, it falls back to a plain page. It also respects the reduced-motion setting.
+Without WebGL, it falls back to a plain page. With reduced motion turned on, nothing animates in and the sky barely moves.
 
 ## Note on live links
 
